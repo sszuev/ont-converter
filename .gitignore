@@ -1,0 +1,10 @@
+.*.swp
+*.o
+*.bin
+*.vec
+data
+result
+target
+.idea/
+/out/
+/logs/
