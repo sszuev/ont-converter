@@ -1,17 +1,11 @@
 package com.github.sszuev;
 
 import com.github.sszuev.ontapi.IRIMap;
-import com.github.sszuev.ontapi.Managers;
-import com.github.sszuev.ontapi.NoWebStreamManager;
-import com.github.sszuev.spin.SpinTransform;
-import org.apache.jena.riot.system.stream.StreamManager;
 import org.semanticweb.owlapi.model.*;
 import ru.avicomp.ontapi.OntApiException;
 import ru.avicomp.ontapi.OntFormat;
 import ru.avicomp.ontapi.OntManagers;
 import ru.avicomp.ontapi.OntologyManager;
-import ru.avicomp.ontapi.config.OntConfig;
-import ru.avicomp.ontapi.transforms.GraphTransformers;
 import sun.misc.Unsafe;
 
 import java.io.IOException;
@@ -20,8 +14,7 @@ import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 /**
  * Created by @szuev on 09.01.2018.
@@ -44,16 +37,12 @@ public class Main {
             process(args, System.out);
         } catch (Exception e) {
             if (e.getSuppressed().length != 0) {
-                throw flatSuppressed(e);
+                System.err.println(Exceptions.flatSuppressedMessage(e));
+                System.exit(-3);
             } else {
                 throw e;
             }
         }
-    }
-
-    private static Exception flatSuppressed(Exception e) { // first level suppressed exceptions only:
-        String msg = e.getMessage() + ":\n" + Arrays.stream(e.getSuppressed()).map(Throwable::getMessage).collect(Collectors.joining("\n"));
-        return new Exception(msg);
     }
 
     public static void process(Args args, PrintStream logs) throws IOException, OntApiException {
@@ -61,7 +50,7 @@ public class Main {
             logs.println("Start ...");
         }
         // prepare and create manager:
-        OntologyManager manager = createManager(args);
+        OntologyManager manager = Managers.createManager(args);
         IRIMap map = null;
         if (manager.getIRIMappers().size() == 1) {
             map = (IRIMap) manager.getIRIMappers().iterator().next();
@@ -70,7 +59,7 @@ public class Main {
         if (args.verbose()) {
             logs.println((args.isInputDirectory() ? "Load ontologies from directory <" : "Load ontology from file <") + args.getInput() + ">.");
         }
-        IRIMap _map = Managers.loadDirectory(manager, args.getInput(), args.verbose() ? logs : null);
+        IRIMap _map = Managers.loadDirectory(manager, args, logs);
         if (map == null) map = _map;
         if (args.verbose()) {
             logs.printf("Mapping: %s%n", map);
@@ -87,7 +76,7 @@ public class Main {
         }
 
         // save:
-        Map<OWLOntology, IRI> res = getOntologyMapToSave(manager, map.toMap(), args);
+        Map<OWLOntology, IRI> res = Managers.getOntologies(manager, map.toMap(), args);
         if (res.isEmpty()) {
             throw new OntApiException("Nothing to save");
         }
@@ -99,41 +88,18 @@ public class Main {
             try {
                 manager.saveOntology(o, args.getOntFormat().createOwlFormat(), doc);
             } catch (OWLOntologyStorageException e) {
-                throw new OntApiException("Can't save " + o + " to " + doc, e);
+                if (args.force()) {
+                    if (args.verbose()) {
+                        logs.println("\tCan't save " + o + " to " + doc);
+                    }
+                } else {
+                    throw new OntApiException("Can't save " + o + " to " + doc, e);
+                }
             }
         }
         if (args.verbose()) {
             logs.println("Done.");
         }
-    }
-
-    private static Map<OWLOntology, IRI> getOntologyMapToSave(OntologyManager manager, Map<OWLOntologyID, IRI> map, Args args) {
-        Map<OWLOntology, IRI> res = new HashMap<>();
-        map.entrySet().stream().filter(e -> !e.getKey().isAnonymous()).forEach(e -> {
-            OWLOntology o = Objects.requireNonNull(manager.getOntology(e.getKey()), "Can't find ontology " + e.getKey());
-            IRI dst = args.toResultFile(e.getValue());
-            res.put(o, dst);
-        });
-        manager.ontologies().filter(IsAnonymous::isAnonymous).forEach(o -> {
-            res.put(o, args.toResultFile(manager.getOntologyDocumentIRI(o)));
-        });
-        return res;
-    }
-
-    public static OntologyManager createManager(Args args) throws IOException {
-        OntologyManager manager = OntManagers.createONT();
-        if (args.spin()) {
-            GraphTransformers.Store transformers = manager.getOntologyConfigurator().getGraphTransformers();
-            manager.getOntologyConfigurator().setGraphTransformers(transformers.addFirst(SpinTransform::new));
-        }
-        if (!args.web()) {
-            manager.getOntologyConfigurator().setSupportedSchemes(Collections.singletonList(OntConfig.DefaultScheme.FILE));
-            IRIMap map = args.isInputDirectory() ? Managers.createMappers(args.getInput()) : new IRIMap();
-            StreamManager.setGlobal(new NoWebStreamManager(map));
-            if (!map.isEmpty())
-                manager.getIRIMappers().add(map);
-        }
-        return manager;
     }
 
     private static void forceDisableAnyExternalLogging() {

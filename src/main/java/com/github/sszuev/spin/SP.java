@@ -17,7 +17,9 @@ import org.topbraid.spin.vocabulary.SPIN;
 import org.topbraid.spin.vocabulary.SPL;
 
 /**
- * Copy-paste from {@link org.topbraid.spin.vocabulary.SP}
+ * Copy-paste from {@link org.topbraid.spin.vocabulary.SP}.
+ * The difference: it does not modifies standard global jena personalities.
+ *
  * Created by @szuev on 10.01.2018.
  */
 @SuppressWarnings("WeakerAccess")

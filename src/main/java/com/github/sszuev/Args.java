@@ -23,15 +23,16 @@ public class Args {
     private static final String JAR_NAME = "ont-converter.jar";
     private final Path input, output;
     private final OntFormat format;
-    private final boolean spin, refine, verbose, webAccess;
+    private final boolean spin, force, refine, verbose, webAccess;
 
     private boolean outDir, inDir;
 
-    private Args(Path input, Path output, OntFormat format, boolean spin, boolean clear, boolean verbose, boolean webAccess) {
+    private Args(Path input, Path output, OntFormat format, boolean spin, boolean force, boolean clear, boolean verbose, boolean webAccess) {
         this.input = input;
         this.output = output;
         this.format = format;
         this.spin = spin;
+        this.force = force;
         this.refine = clear;
         this.verbose = verbose;
         this.webAccess = webAccess;
@@ -49,6 +50,8 @@ public class Args {
         opts.addOption(Option.builder("w").longOpt("web")
                 .desc("Allow web/ftp diving to retrieve dependent ontologies from owl:imports, " +
                         "otherwise use only specified files as the only source.").build());
+        opts.addOption(Option.builder("e").longOpt("force")
+                .desc("Ignore exceptions while loading/saving.").build());
         opts.addOption(Option.builder("s").longOpt("spin")
                 .desc("Use spin transformation to replace rdf:List based spin-constructs with their text-literal representation.").build());
         opts.addOption(Option.builder("r").longOpt("refine")
@@ -103,7 +106,7 @@ public class Args {
                 Files.createDirectory(out);
             }
         }
-        return new Args(in, out, format, cmd.hasOption("s"), cmd.hasOption("r"), cmd.hasOption("v"), cmd.hasOption("w"));
+        return new Args(in, out, format, cmd.hasOption("s"), cmd.hasOption("force"), cmd.hasOption("r"), cmd.hasOption("v"), cmd.hasOption("w"));
     }
 
     private static String help(Options opts, boolean whole) {
@@ -157,6 +160,10 @@ public class Args {
         return spin;
     }
 
+    public boolean force() {
+        return force;
+    }
+
     public boolean web() {
         return webAccess;
     }
@@ -182,8 +189,16 @@ public class Args {
     }
 
     public String print() {
-        return String.format("Arguments:%ninput=%s%noutput=%s%nformat=%s%nspin=%s%nrefine=%s%nverbose=%s%nwebAccess=%s",
-                input, output, format, spin, refine, verbose, webAccess);
+        return String.format("Arguments:%n" +
+                        "\tinput=%s%n" +
+                        "\toutput=%s%n" +
+                        "\tformat=%s%n" +
+                        "\tverbose=%s%n" +
+                        "\tforce=%s%n" +
+                        "\twebAccess=%s%n" +
+                        "\trefine=%s%n" +
+                        "\tspin=%s%n",
+                input, output, format, verbose, force, webAccess, refine, spin);
     }
 
     public static class UsageException extends IllegalArgumentException {
