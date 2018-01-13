@@ -20,6 +20,7 @@ import org.topbraid.spin.vocabulary.SPL;
  * Copy-paste from {@link org.topbraid.spin.vocabulary.SP}
  * Created by @szuev on 10.01.2018.
  */
+@SuppressWarnings("WeakerAccess")
 public class SP {
     public static final String BASE_URI = "http://spinrdf.org/sp";
     public static final String NS = BASE_URI + "#";

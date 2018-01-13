@@ -84,9 +84,13 @@ public class Args {
         Path in = Paths.get(cmd.getOptionValue("input")).toRealPath();
         Path out = Paths.get(cmd.getOptionValue("output"));
 
-        if (!Files.exists(out.getParent())) {
-            throw new IllegalArgumentException("Directory " + out.getParent() + " does not exist.");
+        if (out.getParent() != null) {
+            if (!Files.exists(out.getParent())) {
+                throw new IllegalArgumentException("Directory " + out.getParent() + " does not exist.");
+            }
+            out = out.getParent().toRealPath().resolve(out.getFileName());
         }
+
         if (Files.isDirectory(in) && Files.walk(in).filter(f -> Files.isRegularFile(f)).count() > 1) {
             // out should be directory
             if (Files.exists(out)) {
@@ -153,7 +157,7 @@ public class Args {
         return spin;
     }
 
-    public boolean webAccess() {
+    public boolean web() {
         return webAccess;
     }
 
@@ -177,13 +181,12 @@ public class Args {
         return format;
     }
 
-    @Override
-    public String toString() {
-        return String.format("input=%s%noutput=%s%nformat=%s%nspin=%s%nrefine=%s%nverbose=%s%nwebAccess=%s",
+    public String print() {
+        return String.format("Arguments:%ninput=%s%noutput=%s%nformat=%s%nspin=%s%nrefine=%s%nverbose=%s%nwebAccess=%s",
                 input, output, format, spin, refine, verbose, webAccess);
     }
 
-    static class UsageException extends IllegalArgumentException {
+    public static class UsageException extends IllegalArgumentException {
         private final int code;
 
         UsageException(String s, int code) {

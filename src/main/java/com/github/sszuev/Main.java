@@ -12,16 +12,16 @@ import ru.avicomp.ontapi.OntManagers;
 import ru.avicomp.ontapi.OntologyManager;
 import ru.avicomp.ontapi.config.OntConfig;
 import ru.avicomp.ontapi.transforms.GraphTransformers;
+import sun.misc.Unsafe;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by @szuev on 09.01.2018.
@@ -29,6 +29,7 @@ import java.util.Objects;
 public class Main {
 
     public static void main(String... input) throws Exception {
+        forceDisableAnyExternalLogging();
         Args args = null;
         try {
             args = Args.parse(input);
@@ -37,14 +38,27 @@ public class Main {
             System.exit(u.code());
         }
         if (args.verbose()) {
-            System.out.println(args);
+            System.out.println(args.print());
         }
-        process(args, System.out);
+        try {
+            process(args, System.out);
+        } catch (Exception e) {
+            if (e.getSuppressed().length != 0) {
+                throw flatSuppressed(e);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    private static Exception flatSuppressed(Exception e) { // first level suppressed exceptions only:
+        String msg = e.getMessage() + ":\n" + Arrays.stream(e.getSuppressed()).map(Throwable::getMessage).collect(Collectors.joining("\n"));
+        return new Exception(msg);
     }
 
     public static void process(Args args, PrintStream logs) throws IOException, OntApiException {
         if (args.verbose()) {
-            logs.println("Go");
+            logs.println("Start ...");
         }
         // prepare and create manager:
         OntologyManager manager = createManager(args);
@@ -80,7 +94,7 @@ public class Main {
         for (OWLOntology o : res.keySet()) {
             IRI doc = res.get(o);
             if (args.verbose()) {
-                logs.println("Save ontology <" + o.getOntologyID().getOntologyIRI().map(IRI::toString).orElse("anonymous") + "> to " + doc);
+                logs.printf("Save ontology <%s> as %s to %s.%n", o.getOntologyID().getOntologyIRI().map(IRI::toString).orElse("anonymous"), args.getOntFormat(), doc);
             }
             try {
                 manager.saveOntology(o, args.getOntFormat().createOwlFormat(), doc);
@@ -112,7 +126,7 @@ public class Main {
             GraphTransformers.Store transformers = manager.getOntologyConfigurator().getGraphTransformers();
             manager.getOntologyConfigurator().setGraphTransformers(transformers.addFirst(SpinTransform::new));
         }
-        if (!args.webAccess()) {
+        if (!args.web()) {
             manager.getOntologyConfigurator().setSupportedSchemes(Collections.singletonList(OntConfig.DefaultScheme.FILE));
             IRIMap map = args.isInputDirectory() ? Managers.createMappers(args.getInput()) : new IRIMap();
             StreamManager.setGlobal(new NoWebStreamManager(map));
@@ -120,6 +134,21 @@ public class Main {
                 manager.getIRIMappers().add(map);
         }
         return manager;
+    }
+
+    private static void forceDisableAnyExternalLogging() {
+        org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.OFF);
+        try {
+            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
+            theUnsafe.setAccessible(true);
+            Unsafe u = (Unsafe) theUnsafe.get(null);
+
+            Class cls = Class.forName("jdk.internal.module.IllegalAccessLogger");
+            Field logger = cls.getDeclaredField("logger");
+            u.putObjectVolatile(cls, u.staticFieldOffset(logger), null);
+        } catch (Exception e) {
+            // ignore
+        }
     }
 
     public static class SpinTest {

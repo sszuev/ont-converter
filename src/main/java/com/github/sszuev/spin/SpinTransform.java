@@ -16,9 +16,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Copy-paste from ONT-API tests:  see ru.avicomp.ontapi.utils.SpinTransform.
+ * Copy-paste from ONT-API tests: see ru.avicomp.ontapi.utils.SpinTransform.
  * <p>
- * Note: spin would recurse to internet while
+ * Note: spin-api would try to go to the internet if there are no ontology imports mappings in the jena-system.
+ * Please configure it before.
+ * @see com.github.sszuev.ontapi.NoWebStreamManager
  * <p>
  * Created by @szuev on 10.01.2018.
  */

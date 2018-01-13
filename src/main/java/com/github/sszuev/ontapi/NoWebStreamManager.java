@@ -11,6 +11,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
+ * Jena API StreamManager with restriction on web-access.
+ *
  * Created by @szuev on 12.01.2018.
  */
 public class NoWebStreamManager extends StreamManager {

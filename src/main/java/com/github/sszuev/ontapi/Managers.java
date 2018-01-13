@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
+ * A helper to work with {@link OntologyManager manager}s.
+ *
  * Created by @szuev on 11.01.2018.
  */
 public class Managers {
@@ -95,16 +97,16 @@ public class Managers {
                 .map(IRI::create).forEach(docIRI -> {
             OWLOntologyID id;
             try {
-                if (logs != null) {
-                    logs.println("Load " + docIRI);
-                }
                 id = manager.loadOntologyFromOntologyDocument(docIRI).getOntologyID();
             } catch (OWLOntologyAlreadyExistsException e) {
                 duplicate.addSuppressed(e);
                 return;
-            } catch (OWLOntologyCreationException e) {
-                load.addSuppressed(e);
+            } catch (OWLOntologyCreationException | OntApiException e) {
+                load.addSuppressed(wrap("Can't load " + docIRI, e));
                 return;
+            }
+            if (logs != null) {
+                logs.println("The ontology " + docIRI + " is loaded.");
             }
             map.add(id, docIRI);
         });
@@ -117,5 +119,9 @@ public class Managers {
             throw duplicate;
         }
         return map;
+    }
+
+    private static Exception wrap(String message, Exception e) {
+        return new Exception(message, e);
     }
 }

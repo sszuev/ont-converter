@@ -9,6 +9,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ * A simple iri mapper.
+ *
  * Created by @szuev on 10.01.2018.
  */
 public class IRIMap implements OWLOntologyIRIMapper {
@@ -26,8 +28,8 @@ public class IRIMap implements OWLOntologyIRIMapper {
     }
 
     /**
-     * @param id          {@link OWLOntologyID}, the id
-     * @param documentIRI document iri
+     * @param id          {@link OWLOntologyID}, the ontology id
+     * @param documentIRI document source iri
      */
     public void add(OWLOntologyID id, IRI documentIRI) {
         map.put(Objects.requireNonNull(id, "id cannot be null"),

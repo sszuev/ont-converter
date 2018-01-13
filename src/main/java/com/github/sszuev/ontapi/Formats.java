@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ * Utils to work with {@link OntFormat format}s.
+ *
  * Created by @szuev on 11.01.2018.
  */
 public class Formats {
