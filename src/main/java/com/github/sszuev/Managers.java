@@ -13,9 +13,9 @@ import ru.avicomp.ontapi.config.OntConfig;
 import ru.avicomp.ontapi.transforms.GraphTransformers;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -26,18 +26,7 @@ import java.util.stream.Stream;
  */
 public class Managers {
 
-    public static OntologyManager createManager(GraphTransformers.Store transformers, List<OntConfig.Scheme> schemes) {
-        OntologyManager m = OntManagers.createONT();
-        if (transformers != null) {
-            m.getOntologyConfigurator().setGraphTransformers(transformers);
-        }
-        if (schemes != null) {
-            m.getOntologyConfigurator().setSupportedSchemes(schemes);
-        }
-        return m;
-    }
-
-    public static OntologyManager createManager(Args args) throws IOException {
+    public static OntologyManager createManager(Args args, Logs logs) throws IOException {
         OntologyManager manager = OntManagers.createONT();
         if (args.spin()) {
             GraphTransformers.Store transformers = manager.getOntologyConfigurator().getGraphTransformers();
@@ -45,7 +34,7 @@ public class Managers {
         }
         if (!args.web()) {
             manager.getOntologyConfigurator().setSupportedSchemes(Collections.singletonList(OntConfig.DefaultScheme.FILE));
-            IRIMap map = args.isInputDirectory() ? createMappers(args.getInput()) : new IRIMap();
+            IRIMap map = args.isInputDirectory() ? createMappers(args.getInput(), logs) : new IRIMap();
             StreamManager.setGlobal(new NoWebStreamManager(map));
             if (!map.isEmpty())
                 manager.getIRIMappers().add(map);
@@ -76,51 +65,49 @@ public class Managers {
         return copyManager(from, false);
     }
 
-    public static IRIMap createMappers(Path dir) throws IOException {
+    public static IRIMap createMappers(Path dir, Logs logs) throws IOException {
         OntologyManager manager = OntManagers.createONT();
         manager.getOntologyConfigurator()
                 .setMissingImportHandlingStrategy(MissingImportHandlingStrategy.SILENT)
                 .setPerformTransformation(false)
                 .setSupportedSchemes(Collections.singletonList(OntConfig.DefaultScheme.FILE));
-        return loadDirectory(manager, dir, true, false, false, null);
+        return loadDirectory(manager, dir, logs.toLevel(Logs.Level.INFO), true, false, false);
     }
 
-    public static IRIMap loadDirectory(OntologyManager manager, Args args, PrintStream logs) throws IOException {
-        return loadDirectory(manager, args.getInput(), true, !args.force(), false, args.verbose() ? logs : null);
-    }
-
-    public static IRIMap loadDirectory(OntologyManager manager, Path dir, PrintStream logs) throws IOException {
-        return loadDirectory(manager, dir, true, true, false, logs);
+    public static IRIMap loadDirectory(OntologyManager manager, Args args, Logs logs) throws IOException {
+        return loadDirectory(manager, args.getInput(), logs, true, !args.force(), false);
     }
 
     public static IRIMap loadDirectory(OntologyManager manager,
                                        Path dir,
+                                       Logs logs,
                                        boolean throwIOError,
                                        boolean throwLoadError,
-                                       boolean throwDuplicateError,
-                                       PrintStream out) throws IOException, OntApiException {
+                                       boolean throwDuplicateError
+    ) throws IOException, OntApiException {
         IRIMap map = new IRIMap();
         OntApiException duplicate = new OntApiException("Duplicate ontologies inside dir " + dir + ":");
         OntApiException load = new OntApiException("Errors while creating mapping for dir " + dir + ":");
         IOException io = new IOException("Unexpected i/o errors while processing dir " + dir + ":");
-        walk(dir, io).forEach(docIRI -> {
+        walk(dir, io).forEach(doc -> {
             OWLOntologyID id;
             try {
-                id = manager.loadOntologyFromOntologyDocument(docIRI).getOntologyID();
+                id = manager.loadOntologyFromOntologyDocument(doc).getOntologyID();
             } catch (OWLOntologyAlreadyExistsException e) {
                 duplicate.addSuppressed(e);
                 return;
             } catch (OWLOntologyCreationException | OntApiException | UnloadableImportException e) {
-                if (!throwLoadError && out != null) {
-                    out.println("\tCan't load " + docIRI + ": " + Exceptions.shortMessage(e, 100));
+                // TODO: handle UnparsableOntologyEx
+                if ("tt.txt".equals(Paths.get(doc.toURI()).getFileName().toString())) {
+                    System.err.println("ER" + doc);
                 }
-                load.addSuppressed(Exceptions.wrap("Can't load " + docIRI, e));
+                String msg = "Can't load " + doc + ": " + Exceptions.shortMessage(e, 20);
+                logs.error(msg);
+                load.addSuppressed(Exceptions.wrap(msg, e));
                 return;
             }
-            if (out != null) {
-                out.println("The ontology " + docIRI + " is loaded.");
-            }
-            map.add(id, docIRI);
+            logs.debug("The ontology " + doc + " is loaded.");
+            map.add(id, doc);
         });
         if (throwIOError && io.getSuppressed().length != 0) {
             throw io;
@@ -135,7 +122,6 @@ public class Managers {
 
     private static Stream<IRI> walk(Path dir, IOException holder) throws IOException {
         return Files.walk(dir)
-                .sorted(Comparator.comparingInt(Path::getNameCount).reversed())
                 .map(f -> {
                     try {
                         return f.toRealPath();
@@ -154,10 +140,10 @@ public class Managers {
                         return false;
                     }
                 })
+                .sorted(Comparator.comparingInt(Path::getNameCount).reversed())
                 .map(Path::toUri)
                 .map(IRI::create);
     }
-
 
     public static Map<OWLOntology, IRI> getOntologies(OntologyManager manager, Map<OWLOntologyID, IRI> map, Args args) {
         Map<OWLOntology, IRI> res = new HashMap<>();

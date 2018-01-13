@@ -188,17 +188,24 @@ public class Args {
         return format;
     }
 
-    public String print() {
+    public String asString() {
         return String.format("Arguments:%n" +
-                        "\tinput=%s%n" +
-                        "\toutput=%s%n" +
+                        "\tinput %s=%s%n" +
+                        "\toutput %s=%s%n" +
                         "\tformat=%s%n" +
                         "\tverbose=%s%n" +
                         "\tforce=%s%n" +
                         "\twebAccess=%s%n" +
                         "\trefine=%s%n" +
                         "\tspin=%s%n",
-                input, output, format, verbose, force, webAccess, refine, spin);
+                inDir ? "dir" : "file", input,
+                outDir ? "dir" : "file", output,
+                format,
+                verbose, force, webAccess, refine, spin);
+    }
+
+    public Logs createLogger(PrintStream out) {
+        return (verbose ? Logs.Level.DEBUG : Logs.Level.ERROR).create(out);
     }
 
     public static class UsageException extends IllegalArgumentException {

@@ -14,12 +14,8 @@ public class Exceptions {
         return new Exception(message, e);
     }
 
-    public static Exception flatSuppressed(Exception e) {
-        return new Exception(flatSuppressedMessage(e));
-    }
-
     public static String flatSuppressedMessage(Exception e) { // first level suppressed exceptions only:
-        return e.getMessage() + ":\n" + Arrays.stream(e.getSuppressed()).map(Throwable::getMessage).collect(Collectors.joining("\n"));
+        return Arrays.stream(e.getSuppressed()).map(Throwable::getMessage).collect(Collectors.joining("\n"));
     }
 
     public static String shortMessage(Exception e, int limit) {
