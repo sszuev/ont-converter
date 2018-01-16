@@ -1,5 +1,9 @@
 package com.github.sszuev.ontapi;
 
+import org.apache.jena.lang.csv.ReaderRIOTFactoryCSV;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFParserRegistry;
+import org.semanticweb.owlapi.model.IRI;
 import ru.avicomp.ontapi.OntFormat;
 
 import java.util.List;
@@ -24,5 +28,18 @@ public class Formats {
         return Stream.of(String.valueOf(f.ordinal()), f.name(), f.getID(), f.getExt())
                 .map(String::toLowerCase)
                 .distinct().collect(Collectors.toList());
+    }
+
+    public static void registerJenaCSV() {
+        RDFParserRegistry.removeRegistration(Lang.CSV);
+        RDFParserRegistry.registerLangTriples(Lang.CSV, new ReaderRIOTFactoryCSV());
+    }
+
+    public static void unregisterJenaCSV() {
+        RDFParserRegistry.removeRegistration(Lang.CSV);
+    }
+
+    public static boolean isCSV(IRI iri) {
+        return IRIs.hasExtension(OntFormat.CSV.getExt(), iri);
     }
 }

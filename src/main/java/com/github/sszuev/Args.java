@@ -4,10 +4,11 @@ import com.github.sszuev.ontapi.Formats;
 import org.apache.commons.cli.*;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.semanticweb.owlapi.model.IRI;
 import ru.avicomp.ontapi.OntFormat;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,7 +51,7 @@ public class Args {
         opts.addOption(Option.builder("w").longOpt("web")
                 .desc("Allow web/ftp diving to retrieve dependent ontologies from owl:imports, " +
                         "otherwise use only specified files as the only source.").build());
-        opts.addOption(Option.builder("e").longOpt("force")
+        opts.addOption(Option.builder("e").longOpt("force") // todo: missing imports
                 .desc("Ignore exceptions while loading/saving.").build());
         opts.addOption(Option.builder("s").longOpt("spin")
                 .desc("Use spin transformation to replace rdf:List based spin-constructs with their text-literal representation.").build());
@@ -127,27 +128,6 @@ public class Args {
         return sb.toString();
     }
 
-    public IRI toResultFile(IRI iri) {
-        if (!isOutputDirectory()) {
-            return IRI.create(output.toUri());
-        }
-        Path src = Paths.get(iri.toURI());
-        String fileName;
-        if (src.getFileName().toString().matches(".+\\.[^.]+$")) {
-            fileName = src.getFileName().toString().replaceAll("(.+\\.)[^.]+$", "$1" + format.getExt());
-        } else {
-            fileName = src.getFileName() + "." + format.getExt();
-        }
-        Path res = output.resolve(input.relativize(Paths.get(src.getParent().toString() + File.separator + fileName))).normalize();
-        try {
-            Files.createDirectories(res.getParent());
-            res = res.getParent().toRealPath().resolve(res.getFileName());
-        } catch (IOException e) {
-            throw new UncheckedIOException("Can't create dir " + res.getParent(), e);
-        }
-        return IRI.create(res.toUri());
-    }
-
     public boolean verbose() {
         return verbose;
     }
@@ -202,10 +182,6 @@ public class Args {
                 outDir ? "dir" : "file", output,
                 format,
                 verbose, force, webAccess, refine, spin);
-    }
-
-    public Logs createLogger(PrintStream out) {
-        return (verbose ? Logs.Level.DEBUG : Logs.Level.ERROR).create(out);
     }
 
     public static class UsageException extends IllegalArgumentException {
