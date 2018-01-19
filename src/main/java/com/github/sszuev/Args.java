@@ -1,11 +1,5 @@
 package com.github.sszuev;
 
-import com.github.sszuev.ontapi.Formats;
-import org.apache.commons.cli.*;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import ru.avicomp.ontapi.OntFormat;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -14,6 +8,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.commons.cli.*;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import com.github.sszuev.utils.Formats;
+import ru.avicomp.ontapi.OntFormat;
 
 /**
  * Container for programs input.
@@ -50,11 +51,14 @@ public class Args {
                 .desc("To print info to stdout.").build());
         opts.addOption(Option.builder("w").longOpt("web")
                 .desc("Allow web/ftp diving to retrieve dependent ontologies from owl:imports, " +
-                        "otherwise use only specified files as the only source.").build());
-        opts.addOption(Option.builder("e").longOpt("force") // todo: missing imports
-                .desc("Ignore exceptions while loading/saving.").build());
+                        "otherwise the only specified files will be used as the source.").build());
+        opts.addOption(Option.builder("f").longOpt("force")
+                .desc("Ignore exceptions while loading/saving, keep ontologies with missed imports").build());
         opts.addOption(Option.builder("s").longOpt("spin")
                 .desc("Use spin transformation to replace rdf:List based spin-constructs with their text-literal representation.").build());
+        /*opts.addOption(Option.builder("a").longOpt("allow-punnings") // todo:
+                .desc("Refine output: the resulting ontologies will consist only of the OWL2-DL components.").build());*/
+
         opts.addOption(Option.builder("r").longOpt("refine")
                 .desc("Refine output: the resulting ontologies will consist only of the OWL2-DL components.").build());
         // required:
@@ -66,12 +70,12 @@ public class Args {
         opts.addOption(Option.builder("o").longOpt("output").hasArgs().required().argName("path")
                 .desc("Ontology file or directory containing ontologies to write\n" +
                         "- Required.").build());
-        opts.addOption(Option.builder("f").longOpt("format").hasArgs().required().argName("format")
+        opts.addOption(Option.builder("of").longOpt("out-format").hasArgs().required().argName("format")
                 .desc("The format of output ontology/ontologies.\n" +
                         "Must be one of the following:\n" +
                         OntFormat.formats().filter(OntFormat::isWriteSupported).map(Enum::name).collect(Collectors.joining(", ")) + "\n" +
                         "- Required.").build());
-        if (Stream.of("-h", "--help", "-help", "/?").anyMatch(h -> ArrayUtils.contains(args, h))) {
+        if (Stream.of("-h", "--h", "-help", "--help", "/?").anyMatch(h -> ArrayUtils.contains(args, h))) {
             throw new UsageException(help(opts, true), 0);
         }
         CommandLine cmd;
@@ -81,7 +85,7 @@ public class Args {
             throw new UsageException(e.getLocalizedMessage() + "\n" + help(opts, false), -1);
         }
         // parse
-        OntFormat format = Formats.find(cmd.getOptionValue("format"));
+        OntFormat format = Formats.find(cmd.getOptionValue("out-format"));
         if (!format.isWriteSupported()) {
             throw new IllegalArgumentException(format + " is not suitable for writing.");
         }
@@ -170,12 +174,12 @@ public class Args {
 
     public String asString() {
         return String.format("Arguments:%n" +
-                        "\tinput %s=%s%n" +
-                        "\toutput %s=%s%n" +
-                        "\tformat=%s%n" +
+                        "\tinput-%s=%s%n" +
+                        "\toutput-%s=%s%n" +
+                        "\toutput-format=%s%n" +
                         "\tverbose=%s%n" +
                         "\tforce=%s%n" +
-                        "\twebAccess=%s%n" +
+                        "\tweb-access=%s%n" +
                         "\trefine=%s%n" +
                         "\tspin=%s%n",
                 inDir ? "dir" : "file", input,

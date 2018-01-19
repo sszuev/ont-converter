@@ -1,17 +1,5 @@
 package com.github.sszuev;
 
-import com.github.sszuev.ontapi.IRIMap;
-import com.github.sszuev.ontapi.IRIs;
-import com.github.sszuev.ontapi.Managers;
-import org.apache.log4j.Level;
-import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
-import org.semanticweb.owlapi.model.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.avicomp.ontapi.OntApiException;
-import ru.avicomp.ontapi.OntologyManager;
-import sun.misc.Unsafe;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
@@ -22,6 +10,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import org.apache.log4j.Level;
+import org.semanticweb.owlapi.formats.PrefixDocumentFormat;
+import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
+import org.semanticweb.owlapi.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.github.sszuev.ontapi.IRIMap;
+import com.github.sszuev.utils.IRIs;
+import com.github.sszuev.utils.Managers;
+import ru.avicomp.ontapi.OntApiException;
+import ru.avicomp.ontapi.OntologyManager;
+import sun.misc.Unsafe;
 
 /**
  * Created by @szuev on 09.01.2018.
@@ -40,7 +42,7 @@ public class Main {
             System.exit(u.code());
         }
         // configure logger:
-        Level level = args.verbose() ? Level.DEBUG : Level.ERROR;
+        Level level = args.verbose() ? Level.DEBUG : Level.FATAL;
         org.apache.log4j.Logger.getRootLogger().setLevel(level);
         LOGGER.debug(args.asString());
         process(args);
@@ -85,10 +87,17 @@ public class Main {
             } else {
                 manager = Managers.createManager(map, args.force(), args.spin());
                 saveMap = new HashMap<>();
-                map.sources().forEach(source -> {
-                    OWLOntologyID id = load(manager, source, args.force());
-                    if (id != null) saveMap.put(source.getDocumentIRI(), id);
-                });
+                map.sources()
+                        .forEach(source -> {
+                            OWLOntologyID id = map.ontologyID(IRIs.getDocumentIRI(source)).orElseThrow(IllegalStateException::new);
+                            if (!manager.contains(id)) {
+                                id = load(manager, source, args.force());
+                            }
+                            if (id != null) {
+                                LOGGER.info("Ontology <{}> has been loaded.", toName(id));
+                                saveMap.put(source.getDocumentIRI(), id);
+                            }
+                        });
             }
             save(manager, saveMap, args);
         }
@@ -97,7 +106,7 @@ public class Main {
     private static OWLOntologyID load(OntologyManager manager, OWLOntologyDocumentSource source, boolean ignoreErrors) throws OntApiException {
         try {
             return Managers.loadOntology(manager, source).getOntologyID();
-        } catch (OWLOntologyCreationException | OntApiException e) {
+        } catch (OWLOntologyCreationException | OntApiException | UnloadableImportException e) {
             if (ignoreErrors) {
                 LOGGER.error("Unable to load ontology from {}", source.getDocumentIRI());
                 return null;
@@ -121,11 +130,17 @@ public class Main {
         for (IRI src : map.keySet()) {
             OWLOntologyID id = map.get(src);
             IRI res = toResultFile(args, src);
-            String name = id.getOntologyIRI().map(IRI::toString).orElse("anonymous");
-            LOGGER.info(String.format("Save ontology <%s> as %s to %s.", name, args.getOntFormat(), res));
+            String name = toName(id);
+            LOGGER.info(String.format("Save ontology <%s> as %s to <%s>", name, args.getOntFormat(), res));
             OWLOntology o = Objects.requireNonNull(manager.getOntology(id), "Null ontology. id=" + name + ", file=" + src);
             try {
-                manager.saveOntology(o, args.getOntFormat().createOwlFormat(), res);
+                OWLDocumentFormat in = o.getFormat();
+                if (in == null) throw new IllegalStateException("No format for ont " + o);
+                OWLDocumentFormat out = args.getOntFormat().createOwlFormat();
+                if (in instanceof PrefixDocumentFormat && out instanceof PrefixDocumentFormat) {
+                    out.asPrefixOWLDocumentFormat().setPrefixManager(in.asPrefixOWLDocumentFormat());
+                }
+                manager.saveOntology(o, out, res);
             } catch (OWLOntologyStorageException e) {
                 if (args.force()) {
                     LOGGER.error("Can't save " + name + " to " + res);
@@ -136,6 +151,10 @@ public class Main {
         }
     }
 
+    private static String toName(OWLOntologyID id) {
+        return id.getOntologyIRI().map(IRI::toString).orElse("anonymous");
+    }
+
     private static IRI toResultFile(Args args, IRI iri) {
         if (!args.isOutputDirectory()) {
             return IRI.create(args.getOutput().toUri());
@@ -143,14 +162,9 @@ public class Main {
         return composeResultFilePath(args.getInput(), args.getOutput(), iri, args.getOntFormat().getExt());
     }
 
-    private static IRI composeResultFilePath(Path inputDirectory, Path outputDirectory, IRI inputFile, String extension) { // todo move?
+    private static IRI composeResultFilePath(Path inputDirectory, Path outputDirectory, IRI inputFile, String extension) {
         Path src = Paths.get(inputFile.toURI());
-        String fileName;
-        if (src.getFileName().toString().matches(".+\\.[^.]+$")) {
-            fileName = src.getFileName().toString().replaceAll("(.+\\.)[^.]+$", "$1" + extension);
-        } else {
-            fileName = src.getFileName() + "." + extension;
-        }
+        String fileName = src.getFileName() + "." + extension;
         Path res = outputDirectory
                 .resolve(inputDirectory.relativize(Paths.get(src.getParent().toString() + outputDirectory.getFileSystem().getSeparator() + fileName)))
                 .normalize();
@@ -179,10 +193,9 @@ public class Main {
 
     public static class Test1 {
         public static void main(String... args) throws Exception {
-            String cmd = "-i ..\\..\\ont-api\\out -o out -f 0 -v";
+            String cmd = "-i ..\\..\\ont-api\\out -o out -of 0 -v";
             Main.main(cmd.split("\\s+"));
         }
     }
-
 
 }

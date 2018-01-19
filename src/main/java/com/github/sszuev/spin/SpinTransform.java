@@ -1,26 +1,67 @@
 package com.github.sszuev.spin;
 
-import org.apache.jena.graph.Graph;
-import org.apache.jena.rdf.model.*;
-import org.topbraid.spin.model.*;
-import ru.avicomp.ontapi.jena.OntJenaException;
-import ru.avicomp.ontapi.jena.utils.Graphs;
-import ru.avicomp.ontapi.jena.utils.Models;
-import ru.avicomp.ontapi.jena.vocabulary.RDF;
-import ru.avicomp.ontapi.transforms.Transform;
-
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.jena.graph.Graph;
+import org.apache.jena.rdf.model.*;
+import org.topbraid.spin.model.*;
+
+import com.github.sszuev.ontapi.OWLStreamManager;
+import ru.avicomp.ontapi.jena.OntJenaException;
+import ru.avicomp.ontapi.jena.utils.Graphs;
+import ru.avicomp.ontapi.jena.utils.Models;
+import ru.avicomp.ontapi.jena.vocabulary.RDF;
+import ru.avicomp.ontapi.transforms.Transform;
+
 /**
  * Copy-paste from ONT-API tests: see ru.avicomp.ontapi.utils.SpinTransform.
+ * To replace spin queries with its string representations (it is alternative way to describe spin-sparql-query).
+ * By default a spin query is represented in the bulky form which consists of several rdf:List ([]-List).
+ * The short (string, sp:text) form allows to present the query as an axiom also.
+ * <p>
+ * Example of a query:
+ * <pre> {@code
+ * spin:body [
+ *    rdf:type sp:Select ;
+ *    sp:resultVariables (
+ *        [
+ *          sp:expression [
+ *              rdf:type sp:Count ;
+ *              sp:expression [
+ *                  sp:varName \"subject\"^^xsd:string ;
+ *                ] ;
+ *            ] ;
+ *          sp:varName \"result\"^^xsd:string ;
+ *        ]
+ *      ) ;
+ *    sp:where (
+ *        [
+ *          sp:object spin:_arg2 ;
+ *          sp:predicate spin:_arg1 ;
+ *          sp:subject [
+ *              sp:varName \"subject\"^^xsd:string ;
+ *            ] ;
+ *        ]
+ *      ) ;
+ *  ] ;
+ * } </pre>
+ * And it will be replaced with:
+ * <pre> {@code
+ * spin:body [ a        sp:Select ;
+ *             sp:text  "SELECT ((COUNT(?subject)) AS ?result)\nWHERE {\n    ?subject spin:_arg1 spin:_arg2 .\n}"
+ *           ] ;
+ * }</pre>
+ * <p>
+ * <p>
  * <p>
  * Note: spin-api would try to go to the internet if there are no ontology imports mappings in the jena-system.
  * Please configure it before.
- * @see com.github.sszuev.ontapi.NoWebStreamManager
+ *
+ * @see OWLStreamManager
  * <p>
  * Created by @szuev on 10.01.2018.
  */

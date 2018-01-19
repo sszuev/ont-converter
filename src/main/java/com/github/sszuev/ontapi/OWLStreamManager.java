@@ -1,47 +1,55 @@
 package com.github.sszuev.ontapi;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
 import org.apache.jena.atlas.web.TypedInputStream;
 import org.apache.jena.riot.system.stream.LocationMapper;
 import org.apache.jena.riot.system.stream.Locator;
 import org.apache.jena.riot.system.stream.StreamManager;
 import org.semanticweb.owlapi.model.IRI;
+
 import ru.avicomp.ontapi.OntApiException;
 import ru.avicomp.ontapi.config.OntConfig;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
 /**
  * Jena API StreamManager with restriction on web-access.
- * TODO: rename.
  *
  * Created by @szuev on 12.01.2018.
  */
-public class NoWebStreamManager extends StreamManager {
+@SuppressWarnings("WeakerAccess")
+public class OWLStreamManager extends StreamManager {
 
     private final IRIMap map;
     private final StreamManager delegate;
     private final List<OntConfig.Scheme> schemes;
 
-    public NoWebStreamManager(IRIMap map, List<OntConfig.Scheme> schemes, StreamManager delegate) {
+    /**
+     * Main constructor
+     *
+     * @param map      {@link IRIMap}
+     * @param schemes  List of allowed {@link OntConfig.Scheme}s
+     * @param delegate {@link StreamManager}
+     */
+    public OWLStreamManager(IRIMap map, List<OntConfig.Scheme> schemes, StreamManager delegate) {
         this.map = map;
         this.delegate = delegate;
         this.schemes = schemes;
     }
 
-    public NoWebStreamManager(IRIMap map, List<OntConfig.Scheme> schemes) {
+    public OWLStreamManager(IRIMap map, List<OntConfig.Scheme> schemes) {
         this(map, schemes, StreamManager.makeDefaultStreamManager());
     }
 
-    public NoWebStreamManager(List<OntConfig.Scheme> schemes) {
+    public OWLStreamManager(List<OntConfig.Scheme> schemes) {
         this(new IRIMap(), schemes);
     }
 
     @SuppressWarnings("MethodDoesntCallSuperMethod")
     @Override
     public StreamManager clone() {
-        return new NoWebStreamManager(this.map, this.schemes, delegate.clone());
+        return new OWLStreamManager(this.map, this.schemes, delegate.clone());
     }
 
     @Override
@@ -49,6 +57,12 @@ public class NoWebStreamManager extends StreamManager {
         return delegate.open(filenameOrURI);
     }
 
+    /**
+     *
+     * @param url String, the ontology IRI
+     * @return String, the document IRI
+     * @throws OntApiException in case the url-scheme is not allowed
+     */
     @Override
     public String mapURI(String url) throws OntApiException {
         IRI iri = IRI.create(Objects.requireNonNull(url, "Null url specified."));
