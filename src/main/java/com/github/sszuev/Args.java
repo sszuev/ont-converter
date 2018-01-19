@@ -6,6 +6,8 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -24,15 +26,16 @@ import ru.avicomp.ontapi.OntFormat;
 public class Args {
     private static final String JAR_NAME = "ont-converter.jar";
     private final Path input, output;
-    private final OntFormat format;
+    private final OntFormat outFormat, inFormat;
     private final boolean spin, force, refine, verbose, webAccess;
 
     private boolean outDir, inDir;
 
-    private Args(Path input, Path output, OntFormat format, boolean spin, boolean force, boolean clear, boolean verbose, boolean webAccess) {
+    private Args(Path input, Path output, OntFormat outFormat, OntFormat inFormat, boolean spin, boolean force, boolean clear, boolean verbose, boolean webAccess) {
         this.input = input;
         this.output = output;
-        this.format = format;
+        this.outFormat = outFormat;
+        this.inFormat = inFormat;
         this.spin = spin;
         this.force = force;
         this.refine = clear;
@@ -44,37 +47,7 @@ public class Args {
 
     public static Args parse(String... args) throws IOException, IllegalArgumentException {
         Options opts = new Options();
-        // optional:
-        opts.addOption(Option.builder("h").longOpt("help")
-                .desc("Print usage.").build());
-        opts.addOption(Option.builder("v").longOpt("verbose")
-                .desc("To print info to stdout.").build());
-        opts.addOption(Option.builder("w").longOpt("web")
-                .desc("Allow web/ftp diving to retrieve dependent ontologies from owl:imports, " +
-                        "otherwise the only specified files will be used as the source.").build());
-        opts.addOption(Option.builder("f").longOpt("force")
-                .desc("Ignore exceptions while loading/saving, keep ontologies with missed imports").build());
-        opts.addOption(Option.builder("s").longOpt("spin")
-                .desc("Use spin transformation to replace rdf:List based spin-constructs with their text-literal representation.").build());
-        /*opts.addOption(Option.builder("a").longOpt("allow-punnings") // todo:
-                .desc("Refine output: the resulting ontologies will consist only of the OWL2-DL components.").build());*/
-
-        opts.addOption(Option.builder("r").longOpt("refine")
-                .desc("Refine output: the resulting ontologies will consist only of the OWL2-DL components.").build());
-        // required:
-        opts.addOption(Option.builder("i").longOpt("input").hasArgs().required().argName("path")
-                .desc("Ontology file or directory containing ontologies to read.\n" +
-                        "File(s) must be in one of the following formats:\n" +
-                        OntFormat.formats().filter(OntFormat::isReadSupported).map(Enum::name).collect(Collectors.joining(", ")) + "\n" +
-                        "- Required.").build());
-        opts.addOption(Option.builder("o").longOpt("output").hasArgs().required().argName("path")
-                .desc("Ontology file or directory containing ontologies to write\n" +
-                        "- Required.").build());
-        opts.addOption(Option.builder("of").longOpt("out-format").hasArgs().required().argName("format")
-                .desc("The format of output ontology/ontologies.\n" +
-                        "Must be one of the following:\n" +
-                        OntFormat.formats().filter(OntFormat::isWriteSupported).map(Enum::name).collect(Collectors.joining(", ")) + "\n" +
-                        "- Required.").build());
+        Arrays.stream(Opts.values()).forEach(o -> opts.addOption(o.build()));
         if (Stream.of("-h", "--h", "-help", "--help", "/?").anyMatch(h -> ArrayUtils.contains(args, h))) {
             throw new UsageException(help(opts, true), 0);
         }
@@ -85,9 +58,16 @@ public class Args {
             throw new UsageException(e.getLocalizedMessage() + "\n" + help(opts, false), -1);
         }
         // parse
-        OntFormat format = Formats.find(cmd.getOptionValue("out-format"));
-        if (!format.isWriteSupported()) {
-            throw new IllegalArgumentException(format + " is not suitable for writing.");
+        OntFormat outputFormat = Formats.find(cmd.getOptionValue("output-format"));
+        if (!outputFormat.isWriteSupported()) {
+            throw new IllegalArgumentException(outputFormat + " is not suitable for writing.");
+        }
+        OntFormat inputFormat = null;
+        if (cmd.hasOption("input-format")) {
+            inputFormat = Formats.find(cmd.getOptionValue("input-format"));
+            if (!inputFormat.isReadSupported()) {
+                throw new IllegalArgumentException(inputFormat + " is not suitable for reading.");
+            }
         }
         Path in = Paths.get(cmd.getOptionValue("input")).toRealPath();
         Path out = Paths.get(cmd.getOptionValue("output"));
@@ -111,7 +91,7 @@ public class Args {
                 Files.createDirectory(out);
             }
         }
-        return new Args(in, out, format, cmd.hasOption("s"), cmd.hasOption("force"), cmd.hasOption("r"), cmd.hasOption("v"), cmd.hasOption("w"));
+        return new Args(in, out, outputFormat, inputFormat, cmd.hasOption("s"), cmd.hasOption("force"), cmd.hasOption("r"), cmd.hasOption("v"), cmd.hasOption("w"));
     }
 
     private static String help(Options opts, boolean whole) {
@@ -168,8 +148,12 @@ public class Args {
         return output;
     }
 
-    public OntFormat getOntFormat() {
-        return format;
+    public OntFormat getOutFormat() {
+        return outFormat;
+    }
+
+    public OntFormat getInFormat() {
+        return inFormat;
     }
 
     public String asString() {
@@ -177,6 +161,7 @@ public class Args {
                         "\tinput-%s=%s%n" +
                         "\toutput-%s=%s%n" +
                         "\toutput-format=%s%n" +
+                        "\tinput-format=%s%n" +
                         "\tverbose=%s%n" +
                         "\tforce=%s%n" +
                         "\tweb-access=%s%n" +
@@ -184,7 +169,8 @@ public class Args {
                         "\tspin=%s%n",
                 inDir ? "dir" : "file", input,
                 outDir ? "dir" : "file", output,
-                format,
+                outFormat,
+                Optional.ofNullable(inFormat).map(Enum::toString).orElse("ANY"),
                 verbose, force, webAccess, refine, spin);
     }
 
@@ -198,6 +184,66 @@ public class Args {
 
         public int code() {
             return code;
+        }
+    }
+
+
+    public enum Opts { // todo: add punnings parameter
+        HELP("h", "help", "Print usage."),
+        VERBOSE("v", "verbose", "To print progress info to console."),
+        WEB("w", "web", "Allow web/ftp diving to retrieve dependent ontologies from owl:imports, " +
+                "otherwise the only specified files will be used as the source."),
+        FORCE("f", "force", "Ignore exceptions while loading/saving and keep processing ontologies with missed imports"),
+        SPIN("s", "spin", "Use spin transformation to replace rdf:List based spin-constructs (e.g sp:Select) with their " +
+                "text-literal representation to produce compact axioms list"),
+        REFINE("r", "refine", "Refine output: the resulting ontologies will consist only of the OWL2-DL components."),
+
+        INPUT_FORMAT("if", "input-format", "The input format. If not specified the program will choose the most suitable " +
+                "one to load ontology from file.\nMust be one of the following:\n" +
+                OntFormat.formats().filter(OntFormat::isReadSupported).map(Enum::name).collect(Collectors.joining(", ")) + "\n" +
+                "- Optional.", "format"),
+        OUTPUT_FORMAT("of", "output-format", "The format of output ontology/ontologies.\n" +
+                "Must be one of the following:\n" +
+                OntFormat.formats().filter(OntFormat::isWriteSupported).map(Enum::name).collect(Collectors.joining(", ")) + "\n" +
+                "- Required.", "format", true),
+
+        INPUT("i", "input", "Ontology file or directory with files to read.\nSee --input-format for list of supported output syntaxes.\n" +
+                "- Required.", "path", true),
+        OUTPUT("o", "output", "Ontology file or directory containing ontologies to write.\n" +
+                "If the --input is a file then this option parameter must also be a file.\n" +
+                "- Required.", "path", true),;
+
+        private final String name;
+        private final String longName;
+        private final String description;
+        private final String argType;
+        private final boolean required;
+
+        Opts(String name, String longName, String description) {
+            this(name, longName, description, null);
+        }
+
+        Opts(String name, String longName, String description, String argType) {
+            this(name, longName, description, argType, false);
+        }
+
+        Opts(String name, String longName, String description, String argType, boolean required) {
+            this.name = name;
+            this.longName = longName;
+            this.description = description;
+            this.argType = argType;
+            this.required = required;
+        }
+
+        public Option build() {
+            Option.Builder res = Option.builder(name).longOpt(longName).desc(description);
+            if (required) {
+                res.required();
+            }
+            if (argType != null) {
+                res.hasArgs().argName(argType);
+            }
+            return res.build();
         }
     }
 }

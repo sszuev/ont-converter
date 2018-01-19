@@ -2,10 +2,7 @@ package com.github.sszuev.utils;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.function.Supplier;
 
 import org.apache.jena.riot.system.stream.StreamManager;
@@ -22,10 +19,7 @@ import org.slf4j.LoggerFactory;
 import com.github.sszuev.ontapi.IRIMap;
 import com.github.sszuev.ontapi.OWLStreamManager;
 import com.github.sszuev.spin.SpinTransform;
-import ru.avicomp.ontapi.OntApiException;
-import ru.avicomp.ontapi.OntManagers;
-import ru.avicomp.ontapi.OntologyManager;
-import ru.avicomp.ontapi.OntologyModel;
+import ru.avicomp.ontapi.*;
 import ru.avicomp.ontapi.config.OntConfig;
 import ru.avicomp.ontapi.jena.impl.configuration.OntModelConfig;
 import ru.avicomp.ontapi.transforms.GraphTransformers;
@@ -167,8 +161,10 @@ public class Managers {
      * @throws OWLOntologyCreationException in case of any error
      */
     public static OntologyModel loadOntology(OntologyManager manager, OWLOntologyDocumentSource source) throws OWLOntologyCreationException {
+        Optional<OntFormat> format = Formats.format(source);
+        boolean isCvs = (!format.isPresent() && Formats.isCSV(source.getDocumentIRI())) || format.filter(s -> Objects.equals(s, OntFormat.CSV)).isPresent();
         try {
-            if (!source.getFormat().isPresent() && Formats.isCSV(source.getDocumentIRI())) {
+            if (isCvs) {
                 Formats.registerJenaCSV();
             }
             return manager.loadOntologyFromOntologyDocument(source);
@@ -182,11 +178,12 @@ public class Managers {
      * Each map will content unique ontology-id+file-iri pairs.
      *
      * @param dir {@link Path} the file (usually directory)
+     * @param format {@link OntFormat}, can be null
      * @return a List of independent {@link IRIMap}
      * @throws IOException if something is wrong
      */
-    public static List<IRIMap> createMappings(Path dir) throws IOException {
-        return loadDirectory(dir, Managers::createSoftManager, true);
+    public static List<IRIMap> createMappings(Path dir, OntFormat format) throws IOException {
+        return loadDirectory(dir, format, Managers::createSoftManager, true);
     }
 
 
@@ -195,13 +192,14 @@ public class Managers {
      * Directory could content duplicated ontologies, in that case several mappings would be created
      *
      * @param dir             {@link Path}
+     * @param format {@link OntFormat}, null to choose the most suitable.
      * @param factory         factory to create {@link OntologyManager} for each mapping
      * @param continueIfError if true just prints errors and go ahead, otherwise throws {@link OntApiException}
      * @return List of {@link IRIMap}s without duplicated ontologies inside
      * @throws IOException     if any i/o problem occurs.
      * @throws OntApiException if file is unparsable or unloadable
      */
-    public static List<IRIMap> loadDirectory(Path dir, Supplier<OntologyManager> factory, boolean continueIfError) throws IOException, OntApiException {
+    public static List<IRIMap> loadDirectory(Path dir, OntFormat format, Supplier<OntologyManager> factory, boolean continueIfError) throws IOException, OntApiException {
         List<IRI> files = IRIs.getFiles(dir);
         List<IRIMap> res = new ArrayList<>();
         while (true) {
@@ -211,7 +209,7 @@ public class Managers {
             files.forEach(doc -> {
                 OntologyModel o;
                 try {
-                    o = loadOntology(manager, IRIs.toSource(doc, null));
+                    o = loadOntology(manager, IRIs.toSource(doc, format));
                 } catch (OWLOntologyAlreadyExistsException e) {
                     next.add(doc);
                     return;

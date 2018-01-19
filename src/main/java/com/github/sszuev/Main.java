@@ -61,7 +61,7 @@ public class Main {
     private static void processFile(Args args) throws OntApiException {
         Path file = args.getInput();
         OntologyManager manager = Managers.createManager(args.web(), args.spin(), args.force());
-        OWLOntologyDocumentSource source = IRIs.toSource(IRI.create(file.toUri()), null);
+        OWLOntologyDocumentSource source = IRIs.toSource(IRI.create(file.toUri()), args.getInFormat());
         OWLOntologyID id = load(manager, source, args.force());
         if (id == null) return;
         Map<IRI, OWLOntologyID> map = new HashMap<>();
@@ -73,9 +73,9 @@ public class Main {
         Path dir = args.getInput();
         List<IRIMap> maps;
         if (args.web()) {
-            maps = Managers.loadDirectory(dir, () -> Managers.createManager(args.force(), args.spin()), args.force());
+            maps = Managers.loadDirectory(dir, args.getInFormat(), () -> Managers.createManager(args.force(), args.spin()), args.force());
         } else {
-            maps = Managers.createMappings(dir);
+            maps = Managers.createMappings(dir, args.getInFormat());
         }
         for (IRIMap map : maps) {
             LOGGER.trace("Mapping: {}", map);
@@ -89,13 +89,14 @@ public class Main {
                 saveMap = new HashMap<>();
                 map.sources()
                         .forEach(source -> {
-                            OWLOntologyID id = map.ontologyID(IRIs.getDocumentIRI(source)).orElseThrow(IllegalStateException::new);
+                            IRI src = IRIs.getDocumentIRI(source);
+                            OWLOntologyID id = map.ontologyID(src).orElseThrow(IllegalStateException::new);
                             if (!manager.contains(id)) {
                                 id = load(manager, source, args.force());
                             }
                             if (id != null) {
-                                LOGGER.info("Ontology <{}> has been loaded.", toName(id));
-                                saveMap.put(source.getDocumentIRI(), id);
+                                LOGGER.info("Ontology <{}> has been loaded.", toName(id, src));
+                                saveMap.put(src, id);
                             }
                         });
             }
@@ -107,11 +108,12 @@ public class Main {
         try {
             return Managers.loadOntology(manager, source).getOntologyID();
         } catch (OWLOntologyCreationException | OntApiException | UnloadableImportException e) {
+            IRI iri = IRIs.getDocumentIRI(source);
             if (ignoreErrors) {
-                LOGGER.error("Unable to load ontology from {}", source.getDocumentIRI());
+                LOGGER.error("Unable to load ontology from {}", iri);
                 return null;
             }
-            throw new OntApiException(e);
+            throw new OntApiException("Can't proceed ontology " + iri, e);
         }
     }
 
@@ -130,13 +132,13 @@ public class Main {
         for (IRI src : map.keySet()) {
             OWLOntologyID id = map.get(src);
             IRI res = toResultFile(args, src);
-            String name = toName(id);
-            LOGGER.info(String.format("Save ontology <%s> as %s to <%s>", name, args.getOntFormat(), res));
+            String name = toName(id, src);
+            LOGGER.info(String.format("Save ontology <%s> as %s to <%s>", name, args.getOutFormat(), res));
             OWLOntology o = Objects.requireNonNull(manager.getOntology(id), "Null ontology. id=" + name + ", file=" + src);
             try {
                 OWLDocumentFormat in = o.getFormat();
                 if (in == null) throw new IllegalStateException("No format for ont " + o);
-                OWLDocumentFormat out = args.getOntFormat().createOwlFormat();
+                OWLDocumentFormat out = args.getOutFormat().createOwlFormat();
                 if (in instanceof PrefixDocumentFormat && out instanceof PrefixDocumentFormat) {
                     out.asPrefixOWLDocumentFormat().setPrefixManager(in.asPrefixOWLDocumentFormat());
                 }
@@ -151,15 +153,15 @@ public class Main {
         }
     }
 
-    private static String toName(OWLOntologyID id) {
-        return id.getOntologyIRI().map(IRI::toString).orElse("anonymous");
+    private static String toName(OWLOntologyID id, IRI doc) {
+        return id.getOntologyIRI().orElse(doc).toString();
     }
 
     private static IRI toResultFile(Args args, IRI iri) {
         if (!args.isOutputDirectory()) {
             return IRI.create(args.getOutput().toUri());
         }
-        return composeResultFilePath(args.getInput(), args.getOutput(), iri, args.getOntFormat().getExt());
+        return composeResultFilePath(args.getInput(), args.getOutput(), iri, args.getOutFormat().getExt());
     }
 
     private static IRI composeResultFilePath(Path inputDirectory, Path outputDirectory, IRI inputFile, String extension) {
@@ -191,11 +193,18 @@ public class Main {
         }
     }
 
-    public static class Test1 {
+    public static class SimpleTest { // todo: remove
         public static void main(String... args) throws Exception {
-            String cmd = "-i ..\\..\\ont-api\\out -o out -of 0 -v";
+            String cmd = "-i ..\\..\\ont-api\\out -o out -of 0 -v -f";
             Main.main(cmd.split("\\s+"));
         }
+    }
+
+    public static class HelpPrint { // todo: remove
+        public static void main(String... args) throws Exception {
+            Main.main("-h");
+        }
+
     }
 
 }

@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 import org.apache.jena.lang.csv.ReaderRIOTFactoryCSV;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFParserRegistry;
+import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -85,5 +86,9 @@ public class Formats {
         OWLDocumentFormat f = o.getFormat();
         if (f == null) return Optional.empty();
         return Optional.ofNullable(OntFormat.get(f));
+    }
+
+    public static Optional<OntFormat> format(OWLOntologyDocumentSource source) {
+        return source.getFormat().map(OntFormat::get);
     }
 }
