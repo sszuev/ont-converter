@@ -2,9 +2,10 @@
 *.o
 *.bin
 *.vec
+*.iml
 data
 result
 target
 .idea/
-/out/
+/out*
 /logs/
