@@ -34,8 +34,8 @@ public class Args {
 
     private boolean outDir, inDir;
 
-    private Args(Path input, Path output, OntFormat outFormat, OntFormat inFormat, Configurable.Mode personality,
-                 boolean spin, boolean force, boolean clear, boolean verbose, boolean webAccess) {
+    Args(Path input, Path output, OntFormat outFormat, OntFormat inFormat, Configurable.Mode personality,
+         boolean spin, boolean force, boolean clear, boolean verbose, boolean webAccess) {
         this.input = input;
         this.output = output;
         this.outFormat = outFormat;
@@ -141,7 +141,7 @@ public class Args {
     }
 
     private static String formatLine(OntFormat f) {
-        return StringUtils.rightPad(f.name(), 20) + StringUtils.rightPad(f.isJena() ? "Apache Jena" : "OWL-API", 14) + Formats.aliases(f).stream().collect(Collectors.joining("|"));
+        return StringUtils.rightPad(f.name(), 20) + StringUtils.rightPad(f.isJena() ? "Apache Jena" : "OWL-API", 14) + Formats.aliases(f).stream().collect(Collectors.joining(", "));
     }
 
     private static String formatHeader() {
@@ -252,13 +252,13 @@ public class Args {
 
         REFINE("r", "refine", "Refine output: if specified the resulting ontologies will consist only of the OWL2-DL components (annotations and axioms), " +
                 "otherwise there could be some rdf-stuff (in case the output format is provided by jena)\n" +
-                "- Optional."),
+                "- Optional. Experimental"),
         PUNNING("p", "punnings", "The punning mode. Could be used in conjunction with --refine option. Must be one of the following:\n" +
                 "0 - Lax mode. Default. Allow any punnings, i.e. ontology is allowed to contain multiple entity declarations\n" +
                 "1 - Middle mode. Two forbidden intersections: Datatype <-> Class & NamedObjectProperty <-> DatatypeProperty\n" +
                 "2 - Strict mode: All punnings are forbidden, i.e. Datatype <-> Class and rdf:Property intersections " +
                 "(any pairs of NamedObjectProperty, DatatypeProperty, AnnotationProperty).\n" +
-                "- Optional.",
+                "- Optional. Experimental",
                 "0|1|2"),
 
         INPUT_FORMAT("if", "input-format", "The input format. If not specified the program will choose the most suitable " +

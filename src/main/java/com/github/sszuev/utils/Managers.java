@@ -1,10 +1,8 @@
 package com.github.sszuev.utils;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.function.Supplier;
-
+import com.github.sszuev.ontapi.IRIMap;
+import com.github.sszuev.ontapi.OWLStreamManager;
+import com.github.sszuev.spin.SpinTransform;
 import org.apache.jena.riot.system.stream.StreamManager;
 import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.io.UnparsableOntologyException;
@@ -15,15 +13,17 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.parameters.OntologyCopy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.github.sszuev.ontapi.IRIMap;
-import com.github.sszuev.ontapi.OWLStreamManager;
-import com.github.sszuev.spin.SpinTransform;
 import ru.avicomp.ontapi.*;
 import ru.avicomp.ontapi.config.OntConfig;
 import ru.avicomp.ontapi.jena.impl.configuration.OntModelConfig;
+import ru.avicomp.ontapi.jena.impl.configuration.OntPersonality;
 import ru.avicomp.ontapi.transforms.GraphTransformers;
 import ru.avicomp.ontapi.transforms.OWLTransform;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * Created by @szuev on 15.01.2018.
@@ -65,13 +65,14 @@ public class Managers {
     /**
      * Creates a manager without web-access
      *
+     * @param personality        {@link OntPersonality} personalities, can be null
      * @param map                {@link IRIMap} the mapper
      * @param skipMissingImports if true wrong imports will be ignored
      * @param transformSpin      if true run {@link SpinTransform} to fix bulk []-List based SPARQL-Queries, which can be present in spin-library rdf-ontologies.
      * @return {@link OntologyManager}
      */
-    public static OntologyManager createManager(IRIMap map, boolean skipMissingImports, boolean transformSpin) {
-        OntologyManager manager = createManager(skipMissingImports, transformSpin);
+    public static OntologyManager createManager(OntPersonality personality, IRIMap map, boolean skipMissingImports, boolean transformSpin) {
+        OntologyManager manager = createManager(personality, skipMissingImports, transformSpin);
         OntConfig config = manager.getOntologyConfigurator();
         config.setSupportedSchemes(Collections.singletonList(OntConfig.DefaultScheme.FILE));
         StreamManager.setGlobal(new OWLStreamManager(map, config.getSupportedSchemes()));
@@ -80,14 +81,18 @@ public class Managers {
     }
 
     /**
-     * @param allowFollowRedirects true to prohibit web-traversing
-     * @param skipMissingImports   true to ignore missing imports
-     * @param transformSpin        true to enable spin transformation
+     * @param personality             {@link OntPersonality} personalities, can be null
+     * @param allowFollowImports      true to prohibit web-traversing for owl:imports
+     * @param skipMissingImportsError true to ignore missing imports
+     * @param transformSpin           true to enable spin transformation
      * @return {@link OntologyManager}
      */
-    public static OntologyManager createManager(boolean allowFollowRedirects, boolean skipMissingImports, boolean transformSpin) {
-        OntologyManager manager = createManager(skipMissingImports, transformSpin);
-        if (!allowFollowRedirects) {
+    public static OntologyManager createManager(OntPersonality personality,
+                                                boolean allowFollowImports,
+                                                boolean skipMissingImportsError,
+                                                boolean transformSpin) {
+        OntologyManager manager = createManager(personality, skipMissingImportsError, transformSpin);
+        if (!allowFollowImports) {
             OntConfig config = manager.getOntologyConfigurator();
             List<OntConfig.Scheme> schemes = Collections.singletonList(OntConfig.DefaultScheme.FILE);
             config.setSupportedSchemes(schemes);
@@ -97,47 +102,49 @@ public class Managers {
     }
 
     /**
-     * @param skipMissingImports true to ignore missing imports
-     * @param transformSpin      true to enable spin transformation
+     * @param personality             {@link OntPersonality} personalities, can be null
+     * @param skipMissingImportsError true to ignore missing imports
+     * @param transformSpin           true to enable spin transformation
      * @return {@link OntologyManager}
      */
-    public static OntologyManager createManager(boolean skipMissingImports, boolean transformSpin) {
+    public static OntologyManager createManager(OntPersonality personality, boolean skipMissingImportsError, boolean transformSpin) {
         OntologyManager manager = newManager();
         OntConfig config = manager.getOntologyConfigurator();
+        if (personality != null) {
+            config.setPersonality(personality);
+        }
         if (transformSpin) {
             GraphTransformers.Store transformers = config.getGraphTransformers();
             config.setGraphTransformers(transformers.addFirst(SpinTransform::new));
         }
-        if (skipMissingImports) {
+        if (skipMissingImportsError) {
             config.setMissingImportHandlingStrategy(MissingImportHandlingStrategy.SILENT);
         }
         return manager;
     }
 
     /**
-     * Copies managers content
+     * Copies ontologies between manages
      *
      * @param from             {@link OntologyManager} the source manager
+     * @param to               {@link OntologyManager} the target manager
      * @param ignoreExceptions true to ignore any errors
-     * @return {@link OntologyManager} the target manager
      */
-    public static OntologyManager copyManager(OntologyManager from, boolean ignoreExceptions) {
-        OntologyManager res = newManager();
+    public static void copyOntologies(OntologyManager from, OntologyManager to, boolean ignoreExceptions) {
         OntApiException ex = new OntApiException("Can't copy manager");
         from.ontologies()
                 .sorted(Comparator.comparingInt(o -> (int) o.imports().count()))
                 .forEach(o -> {
+                    LOGGER.trace("Copy ontology {}", o.getOntologyID().getOntologyIRI().orElse(from.getOntologyDocumentIRI(o)));
                     try {
-                        res.copyOntology(o, OntologyCopy.DEEP);
+                        to.copyOntology(o, OntologyCopy.DEEP);
                     } catch (OWLOntologyCreationException e) {
                         ex.addSuppressed(e);
                     }
                 });
-        if (ignoreExceptions) return res;
-        if (ex.getSuppressed().length != 0) {
+        if (!ignoreExceptions && ex.getSuppressed().length != 0) {
             throw ex;
         }
-        return res;
     }
 
     /**
@@ -147,7 +154,10 @@ public class Managers {
      * @return {@link OntologyManager} the target manager
      */
     public static OntologyManager copyManager(OntologyManager from) {
-        return copyManager(from, false);
+        OntologyManager res = newManager();
+        res.getOntologyConfigurator().setPersonality(from.getOntologyConfigurator().getPersonality());
+        copyOntologies(from, res, true);
+        return res;
     }
 
     /**
@@ -177,7 +187,7 @@ public class Managers {
      * Creates a collection of {@link org.semanticweb.owlapi.model.OWLOntologyIRIMapper} by traversing the specified directory.
      * Each map will content unique ontology-id+file-iri pairs.
      *
-     * @param dir {@link Path} the file (usually directory)
+     * @param dir    {@link Path} the file (usually directory)
      * @param format {@link OntFormat}, can be null
      * @return a List of independent {@link IRIMap}
      * @throws IOException if something is wrong
@@ -192,7 +202,7 @@ public class Managers {
      * Directory could content duplicated ontologies, in that case several mappings would be created
      *
      * @param dir             {@link Path}
-     * @param format {@link OntFormat}, null to choose the most suitable.
+     * @param format          {@link OntFormat}, null to choose the most suitable.
      * @param factory         factory to create {@link OntologyManager} for each mapping
      * @param continueIfError if true just prints errors and go ahead, otherwise throws {@link OntApiException}
      * @return List of {@link IRIMap}s without duplicated ontologies inside

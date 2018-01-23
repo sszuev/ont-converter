@@ -59,7 +59,7 @@ public class Main {
 
     private static void processFile(Args args) throws OntApiException {
         Path file = args.getInput();
-        OntologyManager manager = Managers.createManager(args.web(), args.spin(), args.force());
+        OntologyManager manager = Managers.createManager(args.getPersonality(), args.web(), args.spin(), args.force());
         OWLOntologyDocumentSource source = IRIs.toSource(IRI.create(file.toUri()), args.getInputFormat());
         OWLOntologyID id = load(manager, source, args.force());
         if (id == null) return;
@@ -71,11 +71,11 @@ public class Main {
     private static void processDir(Args args) throws IOException, OntApiException {
         Path dir = args.getInput();
         List<IRIMap> maps;
-        if (args.web()) {
-            maps = Managers.loadDirectory(dir, args.getInputFormat(), () -> Managers.createManager(args.force(), args.spin()), args.force());
-        } else {
-            maps = Managers.createMappings(dir, args.getInputFormat());
-        }
+        //if (args.web()) {
+        //    maps = Managers.loadDirectory(dir, args.getInputFormat(), () -> Managers.createManager(args.force(), args.spin()), args.force());
+        //} else {
+        maps = Managers.createMappings(dir, args.getInputFormat());
+        //}
         for (IRIMap map : maps) {
             LOGGER.trace("Mapping: {}", map);
             OntologyManager manager;
@@ -84,7 +84,7 @@ public class Main {
                 saveMap = map.toMap();
                 manager = map.manager().map(OntologyManager.class::cast).orElseThrow(() -> new OntApiException("No manager found"));
             } else {
-                manager = Managers.createManager(map, args.force(), args.spin());
+                manager = Managers.createManager(args.getPersonality(), map, args.force(), args.spin());
                 saveMap = new HashMap<>();
                 map.sources()
                         .forEach(source -> {
@@ -194,14 +194,28 @@ public class Main {
 
     public static class SimpleTest { // todo: remove
         public static void main(String... args) throws Exception {
-            String cmd = "-i ..\\..\\ont-api\\out -o out-0 -of 0 -v -f";
+            String cmd = "-i ..\\..\\ont-api\\out -o out-2 -of 0 -v -f";
             Main.main(cmd.split("\\s+"));
         }
     }
 
-    public static class SimpleTest2 { // todo: remove
+    public static class SimpleTestP { // todo: remove
         public static void main(String... args) throws Exception {
-            String cmd = "-i ..\\..\\ont-api\\src\\test\\resources -o out-2 -of 1 -v -f";
+            String cmd = "-i ..\\..\\ont-api\\out -o out-1 -of 0 -v -f -p 2";
+            Main.main(cmd.split("\\s+"));
+        }
+    }
+
+    public static class SimpleTestMN { // todo: remove
+        public static void main(String... args) throws Exception {
+            String cmd = "-i ..\\..\\ont-api\\out -o out-3 -of 12 -v -f";
+            Main.main(cmd.split("\\s+"));
+        }
+    }
+
+    public static class SimpleTestRefine { // todo: remove
+        public static void main(String... args) throws Exception {
+            String cmd = "-i ..\\..\\ont-api\\src\\test\\resources -o out-3 -of 1 -v -f -r";
             Main.main(cmd.split("\\s+"));
         }
     }

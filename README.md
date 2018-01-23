@@ -2,7 +2,7 @@
 
 ## A simple command-line utility to convert any rdf graph to OWL2-DL ontology.
 
-### Usage: `java -jar ont-converter.jar [-f] [-h] -i <path> [-if <format>] -o      <path> -of <format> [-r] [-s] [-v] [-w]`
+### Usage: `java -jar ont-converter.jar [-f] [-h] -i <path> [-if <format>] -o <path> -of <format> [-r] [-s] [-v] [-w]`
 
 ### Options:
 
@@ -99,3 +99,6 @@
 | DL_HTML | OWL-API | 20, dl_html, dl/html, html |
 | LATEX | OWL-API | 21, latex, tex |
  
+ ### Requirements:
+* java8+
+* maven to build (`mvn package`)
