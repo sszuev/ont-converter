@@ -115,7 +115,7 @@ public class Args {
         }
         String val = cmd.getOptionValue(Opts.PUNNING.longName);
         try {
-            return Configurable.Mode.values()[Integer.parseInt(val)];
+            return Configurable.Mode.values()[Configurable.Mode.values().length - Integer.parseInt(val)];
         } catch (NumberFormatException | IndexOutOfBoundsException e) {
             throw new IllegalArgumentException("Wrong --" + Opts.PUNNING.longName + ":" + val, e);
         }
