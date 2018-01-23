@@ -1,5 +1,18 @@
 package com.github.sszuev;
 
+import com.github.sszuev.ontapi.IRIMap;
+import com.github.sszuev.utils.IRIs;
+import com.github.sszuev.utils.Managers;
+import org.apache.log4j.Level;
+import org.semanticweb.owlapi.formats.PrefixDocumentFormat;
+import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
+import org.semanticweb.owlapi.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.avicomp.ontapi.OntApiException;
+import ru.avicomp.ontapi.OntologyManager;
+import sun.misc.Unsafe;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
@@ -10,20 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import org.apache.log4j.Level;
-import org.semanticweb.owlapi.formats.PrefixDocumentFormat;
-import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
-import org.semanticweb.owlapi.model.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.github.sszuev.ontapi.IRIMap;
-import com.github.sszuev.utils.IRIs;
-import com.github.sszuev.utils.Managers;
-import ru.avicomp.ontapi.OntApiException;
-import ru.avicomp.ontapi.OntologyManager;
-import sun.misc.Unsafe;
 
 /**
  * Created by @szuev on 09.01.2018.
@@ -61,7 +60,7 @@ public class Main {
     private static void processFile(Args args) throws OntApiException {
         Path file = args.getInput();
         OntologyManager manager = Managers.createManager(args.web(), args.spin(), args.force());
-        OWLOntologyDocumentSource source = IRIs.toSource(IRI.create(file.toUri()), args.getInFormat());
+        OWLOntologyDocumentSource source = IRIs.toSource(IRI.create(file.toUri()), args.getInputFormat());
         OWLOntologyID id = load(manager, source, args.force());
         if (id == null) return;
         Map<IRI, OWLOntologyID> map = new HashMap<>();
@@ -73,9 +72,9 @@ public class Main {
         Path dir = args.getInput();
         List<IRIMap> maps;
         if (args.web()) {
-            maps = Managers.loadDirectory(dir, args.getInFormat(), () -> Managers.createManager(args.force(), args.spin()), args.force());
+            maps = Managers.loadDirectory(dir, args.getInputFormat(), () -> Managers.createManager(args.force(), args.spin()), args.force());
         } else {
-            maps = Managers.createMappings(dir, args.getInFormat());
+            maps = Managers.createMappings(dir, args.getInputFormat());
         }
         for (IRIMap map : maps) {
             LOGGER.trace("Mapping: {}", map);
@@ -133,12 +132,12 @@ public class Main {
             OWLOntologyID id = map.get(src);
             IRI res = toResultFile(args, src);
             String name = toName(id, src);
-            LOGGER.info(String.format("Save ontology <%s> as %s to <%s>", name, args.getOutFormat(), res));
+            LOGGER.info(String.format("Save ontology <%s> as %s to <%s>", name, args.getOutputFormat(), res));
             OWLOntology o = Objects.requireNonNull(manager.getOntology(id), "Null ontology. id=" + name + ", file=" + src);
             try {
                 OWLDocumentFormat in = o.getFormat();
                 if (in == null) throw new IllegalStateException("No format for ont " + o);
-                OWLDocumentFormat out = args.getOutFormat().createOwlFormat();
+                OWLDocumentFormat out = args.getOutputFormat().createOwlFormat();
                 if (in instanceof PrefixDocumentFormat && out instanceof PrefixDocumentFormat) {
                     out.asPrefixOWLDocumentFormat().setPrefixManager(in.asPrefixOWLDocumentFormat());
                 }
@@ -161,7 +160,7 @@ public class Main {
         if (!args.isOutputDirectory()) {
             return IRI.create(args.getOutput().toUri());
         }
-        return composeResultFilePath(args.getInput(), args.getOutput(), iri, args.getOutFormat().getExt());
+        return composeResultFilePath(args.getInput(), args.getOutput(), iri, args.getOutputFormat().getExt());
     }
 
     private static IRI composeResultFilePath(Path inputDirectory, Path outputDirectory, IRI inputFile, String extension) {
@@ -195,7 +194,14 @@ public class Main {
 
     public static class SimpleTest { // todo: remove
         public static void main(String... args) throws Exception {
-            String cmd = "-i ..\\..\\ont-api\\out -o out -of 0 -v -f";
+            String cmd = "-i ..\\..\\ont-api\\out -o out-0 -of 0 -v -f";
+            Main.main(cmd.split("\\s+"));
+        }
+    }
+
+    public static class SimpleTest2 { // todo: remove
+        public static void main(String... args) throws Exception {
+            String cmd = "-i ..\\..\\ont-api\\src\\test\\resources -o out-2 -of 1 -v -f";
             Main.main(cmd.split("\\s+"));
         }
     }

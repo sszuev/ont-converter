@@ -1,5 +1,14 @@
 package com.github.sszuev;
 
+import com.github.sszuev.utils.Formats;
+import org.apache.commons.cli.*;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import ru.avicomp.ontapi.OntFormat;
+import ru.avicomp.ontapi.jena.impl.configuration.Configurable;
+import ru.avicomp.ontapi.jena.impl.configuration.OntModelConfig;
+import ru.avicomp.ontapi.jena.impl.configuration.OntPersonality;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -11,15 +20,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.cli.*;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import com.github.sszuev.utils.Formats;
-import ru.avicomp.ontapi.OntFormat;
-
 /**
- * Container for programs input.
+ * Parsing programs input.
  * <p>
  * Created by @szuev on 12.01.2018.
  */
@@ -27,15 +29,18 @@ public class Args {
     private static final String JAR_NAME = "ont-converter.jar";
     private final Path input, output;
     private final OntFormat outFormat, inFormat;
+    private final Configurable.Mode personality;
     private final boolean spin, force, refine, verbose, webAccess;
 
     private boolean outDir, inDir;
 
-    private Args(Path input, Path output, OntFormat outFormat, OntFormat inFormat, boolean spin, boolean force, boolean clear, boolean verbose, boolean webAccess) {
+    private Args(Path input, Path output, OntFormat outFormat, OntFormat inFormat, Configurable.Mode personality,
+                 boolean spin, boolean force, boolean clear, boolean verbose, boolean webAccess) {
         this.input = input;
         this.output = output;
         this.outFormat = outFormat;
         this.inFormat = inFormat;
+        this.personality = personality;
         this.spin = spin;
         this.force = force;
         this.refine = clear;
@@ -58,20 +63,12 @@ public class Args {
             throw new UsageException(e.getLocalizedMessage() + "\n" + help(opts, false), -1);
         }
         // parse
-        OntFormat outputFormat = Formats.find(cmd.getOptionValue("output-format"));
-        if (!outputFormat.isWriteSupported()) {
-            throw new IllegalArgumentException(outputFormat + " is not suitable for writing.");
-        }
-        OntFormat inputFormat = null;
-        if (cmd.hasOption("input-format")) {
-            inputFormat = Formats.find(cmd.getOptionValue("input-format"));
-            if (!inputFormat.isReadSupported()) {
-                throw new IllegalArgumentException(inputFormat + " is not suitable for reading.");
-            }
-        }
-        Path in = Paths.get(cmd.getOptionValue("input")).toRealPath();
-        Path out = Paths.get(cmd.getOptionValue("output"));
+        OntFormat outputFormat = parseOutputFormat(cmd);
+        OntFormat inputFormat = parseInputFormat(cmd);
+        Configurable.Mode mode = parsePersonalities(cmd);
 
+        Path in = Paths.get(cmd.getOptionValue(Opts.INPUT.longName)).toRealPath();
+        Path out = Paths.get(cmd.getOptionValue(Opts.OUTPUT.longName));
         if (out.getParent() != null) {
             if (!Files.exists(out.getParent())) {
                 throw new IllegalArgumentException("Directory " + out.getParent() + " does not exist.");
@@ -91,25 +88,64 @@ public class Args {
                 Files.createDirectory(out);
             }
         }
-        return new Args(in, out, outputFormat, inputFormat, cmd.hasOption("s"), cmd.hasOption("force"), cmd.hasOption("r"), cmd.hasOption("v"), cmd.hasOption("w"));
+        return new Args(in, out, outputFormat, inputFormat, mode,
+                cmd.hasOption("s"), cmd.hasOption("force"), cmd.hasOption("r"), cmd.hasOption("v"), cmd.hasOption("w"));
     }
 
-    private static String help(Options opts, boolean whole) {
+    private static OntFormat parseInputFormat(CommandLine cmd) {
+        if (!cmd.hasOption(Opts.INPUT_FORMAT.longName)) return null;
+        OntFormat res = Formats.find(cmd.getOptionValue(Opts.INPUT_FORMAT.longName));
+        if (!res.isReadSupported()) {
+            throw new IllegalArgumentException(res + " is not suitable for reading.");
+        }
+        return res;
+    }
+
+    private static OntFormat parseOutputFormat(CommandLine cmd) {
+        OntFormat res = Formats.find(cmd.getOptionValue(Opts.OUTPUT_FORMAT.longName));
+        if (!res.isWriteSupported()) {
+            throw new IllegalArgumentException(res + " is not suitable for writing.");
+        }
+        return res;
+    }
+
+    private static Configurable.Mode parsePersonalities(CommandLine cmd) {
+        if (!cmd.hasOption(Opts.PUNNING.longName)) {
+            return Configurable.Mode.LAX;
+        }
+        String val = cmd.getOptionValue(Opts.PUNNING.longName);
+        try {
+            return Configurable.Mode.values()[Integer.parseInt(val)];
+        } catch (NumberFormatException | IndexOutOfBoundsException e) {
+            throw new IllegalArgumentException("Wrong --" + Opts.PUNNING.longName + ":" + val, e);
+        }
+    }
+
+    private static String help(Options opts, boolean usage) {
         StringBuilder sb = new StringBuilder();
-        if (whole) {
+        if (usage) {
             sb.append("A simple command-line utility to convert any rdf graph to OWL2-DL ontology.").append("\n");
         }
         StringWriter sw = new StringWriter();
         new HelpFormatter().printHelp(new PrintWriter(sw), 74, "java -jar " + JAR_NAME, "options:", opts, 1, 3, null, true);
         sb.append(sw);
-        if (whole) {
-            sb.append("formats aliases (case insensitive):").append("\n");
+        if (usage) {
+            sb.append("Full list of supported formats:").append("\n");
+            sb.append(" ").append(formatHeader()).append("\n");
             OntFormat.formats()
                     .filter(f -> f.isReadSupported() || f.isWriteSupported())
-                    .map(f -> Formats.aliases(f).stream().collect(Collectors.joining("|", " " + StringUtils.rightPad(f.name(), 20) + "\t", "")))
-                    .forEach(x -> sb.append(x).append("\n"));
+                    .map(Args::formatLine)
+                    .forEach(x -> sb.append(" ").append(x).append("\n"));
         }
         return sb.toString();
+    }
+
+    private static String formatLine(OntFormat f) {
+        return StringUtils.rightPad(f.name(), 20) + StringUtils.rightPad(f.isJena() ? "Apache Jena" : "OWL-API", 14) + Formats.aliases(f).stream().collect(Collectors.joining("|"));
+    }
+
+    private static String formatHeader() {
+        return StringUtils.rightPad("Name:", 20) + StringUtils.rightPad("Provider:", 14) + "Aliases (case insensitive):";
     }
 
     public boolean verbose() {
@@ -148,12 +184,25 @@ public class Args {
         return output;
     }
 
-    public OntFormat getOutFormat() {
+    public OntFormat getOutputFormat() {
         return outFormat;
     }
 
-    public OntFormat getInFormat() {
+    public OntFormat getInputFormat() {
         return inFormat;
+    }
+
+    public OntPersonality getPersonality() {
+        switch (personality) {
+            case LAX:
+                return OntModelConfig.ONT_PERSONALITY_LAX;
+            case MEDIUM:
+                return OntModelConfig.ONT_PERSONALITY_MEDIUM;
+            case STRICT:
+                return OntModelConfig.ONT_PERSONALITY_STRICT;
+            default:
+                throw new IllegalStateException();
+        }
     }
 
     public String asString() {
@@ -162,6 +211,7 @@ public class Args {
                         "\toutput-%s=%s%n" +
                         "\toutput-format=%s%n" +
                         "\tinput-format=%s%n" +
+                        "\tpunnings-mode=%s%n" +
                         "\tverbose=%s%n" +
                         "\tforce=%s%n" +
                         "\tweb-access=%s%n" +
@@ -171,6 +221,7 @@ public class Args {
                 outDir ? "dir" : "file", output,
                 outFormat,
                 Optional.ofNullable(inFormat).map(Enum::toString).orElse("ANY"),
+                personality,
                 verbose, force, webAccess, refine, spin);
     }
 
@@ -188,18 +239,30 @@ public class Args {
     }
 
 
-    public enum Opts { // todo: add punnings parameter
+    public enum Opts {
         HELP("h", "help", "Print usage."),
-        VERBOSE("v", "verbose", "To print progress info to console."),
-        WEB("w", "web", "Allow web/ftp diving to retrieve dependent ontologies from owl:imports, " +
-                "otherwise the only specified files will be used as the source."),
-        FORCE("f", "force", "Ignore exceptions while loading/saving and keep processing ontologies with missed imports"),
+        VERBOSE("v", "verbose", "To print progress messages to console."),
+        WEB("w", "web", "Allow web/ftp diving to retrieve dependent ontologies from imports (owl:imports), " +
+                "otherwise the specified directory (see --input) will be used as the only source."),
+        FORCE("f", "force", "Ignore any exceptions while loading/saving and processing imports"),
+
         SPIN("s", "spin", "Use spin transformation to replace rdf:List based spin-constructs (e.g sp:Select) with their " +
-                "text-literal representation to produce compact axioms list"),
-        REFINE("r", "refine", "Refine output: the resulting ontologies will consist only of the OWL2-DL components."),
+                "text-literal representation to produce compact axioms list.\n" +
+                "- Optional."),
+
+        REFINE("r", "refine", "Refine output: if specified the resulting ontologies will consist only of the OWL2-DL components (annotations and axioms), " +
+                "otherwise there could be some rdf-stuff (in case the output format is provided by jena)\n" +
+                "- Optional."),
+        PUNNING("p", "punnings", "The punning mode. Could be used in conjunction with --refine option. Must be one of the following:\n" +
+                "0 - Lax mode. Default. Allow any punnings, i.e. ontology is allowed to contain multiple entity declarations\n" +
+                "1 - Middle mode. Two forbidden intersections: Datatype <-> Class & NamedObjectProperty <-> DatatypeProperty\n" +
+                "2 - Strict mode: All punnings are forbidden, i.e. Datatype <-> Class and rdf:Property intersections " +
+                "(any pairs of NamedObjectProperty, DatatypeProperty, AnnotationProperty).\n" +
+                "- Optional.",
+                "0|1|2"),
 
         INPUT_FORMAT("if", "input-format", "The input format. If not specified the program will choose the most suitable " +
-                "one to load ontology from file.\nMust be one of the following:\n" +
+                "one to load ontology from a file.\nMust be one of the following:\n" +
                 OntFormat.formats().filter(OntFormat::isReadSupported).map(Enum::name).collect(Collectors.joining(", ")) + "\n" +
                 "- Optional.", "format"),
         OUTPUT_FORMAT("of", "output-format", "The format of output ontology/ontologies.\n" +
@@ -207,10 +270,12 @@ public class Args {
                 OntFormat.formats().filter(OntFormat::isWriteSupported).map(Enum::name).collect(Collectors.joining(", ")) + "\n" +
                 "- Required.", "format", true),
 
-        INPUT("i", "input", "Ontology file or directory with files to read.\nSee --input-format for list of supported output syntaxes.\n" +
+        INPUT("i", "input", "The file path or not-empty directory to load ontology/ontologies.\n" +
+                "See --input-format for list of supported syntaxes.\n" +
                 "- Required.", "path", true),
-        OUTPUT("o", "output", "Ontology file or directory containing ontologies to write.\n" +
-                "If the --input is a file then this option parameter must also be a file.\n" +
+        OUTPUT("o", "output", "The file or directory path to store result ontology/ontologies.\n" +
+                "If the --input is a file then this parameter must also be a file.\n" +
+                "See --output-format for list of supported syntaxes.\n" +
                 "- Required.", "path", true),;
 
         private final String name;
