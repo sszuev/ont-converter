@@ -15,6 +15,8 @@ import org.semanticweb.owlapi.io.FileDocumentSource;
 import org.semanticweb.owlapi.io.IRIDocumentSource;
 import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyID;
 
 import ru.avicomp.ontapi.OntFormat;
 
@@ -106,4 +108,11 @@ public class IRIs {
         return source.getDocumentIRI();
     }
 
+    public static IRI toName(OWLOntologyID id, IRI orElse) {
+        return id.getOntologyIRI().orElse(orElse);
+    }
+
+    public static IRI toName(OWLOntology o) {
+        return toName(o.getOntologyID(), o.getOWLOntologyManager().getOntologyDocumentIRI(o));
+    }
 }

@@ -104,4 +104,4 @@
 * maven to build (`mvn package`)
 
  ### Dependencies:
- [ONT-API](https://github.com/avicomp/ont-api)
+ [ONT-API](https://github.com/avicomp/ont-api)(__now 1.1.0-SNAPSHOT__)

@@ -4,14 +4,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.apache.jena.riot.system.stream.StreamManager;
 import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.io.UnparsableOntologyException;
-import org.semanticweb.owlapi.model.IRI;
-import org.semanticweb.owlapi.model.MissingImportHandlingStrategy;
-import org.semanticweb.owlapi.model.OWLOntologyAlreadyExistsException;
-import org.semanticweb.owlapi.model.OWLOntologyCreationException;
+import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.OntologyCopy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,10 +132,12 @@ public class Managers {
      */
     public static void copyOntologies(OntologyManager from, OntologyManager to, boolean ignoreExceptions) {
         OntApiException ex = new OntApiException("Can't copy manager");
-        from.ontologies()
+        List<OWLOntology> src = from.ontologies()
                 .sorted(Comparator.comparingInt(o -> (int) o.imports().count()))
-                .forEach(o -> {
-                    LOGGER.trace("Copy ontology {}", o.getOntologyID().getOntologyIRI().orElse(from.getOntologyDocumentIRI(o)));
+                .collect(Collectors.toList());
+        src.forEach(o -> {
+            IRI name = IRIs.toName(o);
+            LOGGER.trace("Copy ontology {}", name);
                     try {
                         to.copyOntology(o, OntologyCopy.DEEP);
                     } catch (OWLOntologyCreationException e) {

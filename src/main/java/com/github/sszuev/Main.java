@@ -95,7 +95,7 @@ public class Main {
                                 id = load(manager, source, args.force());
                             }
                             if (id != null) {
-                                LOGGER.info("Ontology <{}> has been loaded.", toName(id, src));
+                                LOGGER.info("Ontology <{}> has been loaded.", IRIs.toName(id, src));
                                 saveMap.put(src, id);
                             }
                         });
@@ -132,7 +132,7 @@ public class Main {
         for (IRI src : map.keySet()) {
             OWLOntologyID id = map.get(src);
             IRI res = toResultFile(args, src);
-            String name = toName(id, src);
+            IRI name = IRIs.toName(id, src);
             LOGGER.info(String.format("Save ontology <%s> as %s to <%s>", name, args.getOutputFormat(), res));
             OWLOntology o = Objects.requireNonNull(manager.getOntology(id), "Null ontology. id=" + name + ", file=" + src);
             try {
@@ -151,10 +151,6 @@ public class Main {
                 }
             }
         }
-    }
-
-    private static String toName(OWLOntologyID id, IRI doc) {
-        return id.getOntologyIRI().orElse(doc).toString();
     }
 
     private static IRI toResultFile(Args args, IRI iri) {
@@ -216,7 +212,7 @@ public class Main {
 
     public static class SimpleTestF { // todo: remove
         public static void main(String... args) throws Exception {
-            String cmd = "-i ..\\..\\ont-api\\out -o out-f -of 13 -v -f";
+            String cmd = "-i ..\\..\\ont-api\\out -o out-f -of 13 -v";
             Main.main(cmd.split("\\s+"));
         }
     }
