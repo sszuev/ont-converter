@@ -2,7 +2,7 @@
 
 ## A simple command-line utility to convert any rdf graph to OWL2-DL ontology.
 
-### Usage: `java -jar ont-converter.jar [-f] [-h] -i <path> [-if <format>] -o <path> -of <format> [-r] [-s] [-v] [-w]`
+### Usage: `java -jar ont-converter.jar [-f] [-h] -i <path> [-if <format>] -o <path> -of <format> [-p <0|1|2>] [-r] [-s] [-v] [-w]`
 
 ### Options:
 
@@ -78,7 +78,7 @@
 | Name | Provider | Aliases (case insensitive) |
 | :------------- | :-------------| :----- |
 | TURTLE | Apache Jena | 0, turtle, ttl |
-| RDF_XML | Apache Jena | 1, rdf_xml, rdf/xml, rdf` |
+| RDF_XML | Apache Jena | 1, rdf_xml, rdf/xml, rdf |
 | RDF_JSON | Apache Jena | 2, rdf_json, rdf/json, rj |
 | JSON_LD | Apache Jena | 3, json_ld, json-ld, jsonld |
 | NTRIPLES | Apache Jena | 4, ntriples, n-triples, nt |
@@ -102,3 +102,6 @@
  ### Requirements:
 * java8+
 * maven to build (`mvn package`)
+
+ ### Dependencies:
+ [ONT-API](https://github.com/avicomp/ont-api)

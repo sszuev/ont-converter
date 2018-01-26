@@ -9,3 +9,4 @@ target
 .idea/
 /out*
 /logs/
+src/test/

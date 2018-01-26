@@ -1,8 +1,10 @@
 package com.github.sszuev.utils;
 
-import com.github.sszuev.ontapi.IRIMap;
-import com.github.sszuev.ontapi.OWLStreamManager;
-import com.github.sszuev.spin.SpinTransform;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.function.Supplier;
+
 import org.apache.jena.riot.system.stream.StreamManager;
 import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.io.UnparsableOntologyException;
@@ -13,17 +15,15 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.parameters.OntologyCopy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.sszuev.ontapi.IRIMap;
+import com.github.sszuev.ontapi.OWLStreamManager;
+import com.github.sszuev.spin.SpinTransform;
 import ru.avicomp.ontapi.*;
 import ru.avicomp.ontapi.config.OntConfig;
 import ru.avicomp.ontapi.jena.impl.configuration.OntModelConfig;
 import ru.avicomp.ontapi.jena.impl.configuration.OntPersonality;
 import ru.avicomp.ontapi.transforms.GraphTransformers;
-import ru.avicomp.ontapi.transforms.OWLTransform;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.function.Supplier;
 
 /**
  * Created by @szuev on 15.01.2018.
@@ -47,8 +47,10 @@ public class Managers {
 
     /**
      * Creates a manager to traverse through directory.
-     * This manager is soft: missing imports are ignored, all punnings are allowed,
-     * no transformations with except of {@link OWLTransform} (to fix ontology IRI), no web access,
+     * This manager is soft:
+     * missing imports are ignored,
+     * all punnings are allowed,
+     * no transformations
      *
      * @return {@link OntologyManager}
      */
@@ -56,7 +58,7 @@ public class Managers {
         OntologyManager manager = newManager();
         manager.getOntologyConfigurator()
                 .setMissingImportHandlingStrategy(MissingImportHandlingStrategy.SILENT)
-                .setGraphTransformers(new GraphTransformers.Store().addFirst(OWLTransform::new))
+                .setPerformTransformation(false)
                 .setSupportedSchemes(Collections.singletonList(OntConfig.DefaultScheme.FILE))
                 .setPersonality(OntModelConfig.ONT_PERSONALITY_LAX);
         return manager;
@@ -67,12 +69,12 @@ public class Managers {
      *
      * @param personality        {@link OntPersonality} personalities, can be null
      * @param map                {@link IRIMap} the mapper
-     * @param skipMissingImports if true wrong imports will be ignored
+     * @param force true to force load/store ontologies
      * @param transformSpin      if true run {@link SpinTransform} to fix bulk []-List based SPARQL-Queries, which can be present in spin-library rdf-ontologies.
      * @return {@link OntologyManager}
      */
-    public static OntologyManager createManager(OntPersonality personality, IRIMap map, boolean skipMissingImports, boolean transformSpin) {
-        OntologyManager manager = createManager(personality, skipMissingImports, transformSpin);
+    public static OntologyManager createManager(OntPersonality personality, IRIMap map, boolean force, boolean transformSpin) {
+        OntologyManager manager = createManager(personality, force, transformSpin);
         OntConfig config = manager.getOntologyConfigurator();
         config.setSupportedSchemes(Collections.singletonList(OntConfig.DefaultScheme.FILE));
         StreamManager.setGlobal(new OWLStreamManager(map, config.getSupportedSchemes()));
@@ -83,15 +85,15 @@ public class Managers {
     /**
      * @param personality             {@link OntPersonality} personalities, can be null
      * @param allowFollowImports      true to prohibit web-traversing for owl:imports
-     * @param skipMissingImportsError true to ignore missing imports
+     * @param force true to ignore missing imports skip reading wrong axioms.
      * @param transformSpin           true to enable spin transformation
      * @return {@link OntologyManager}
      */
     public static OntologyManager createManager(OntPersonality personality,
                                                 boolean allowFollowImports,
-                                                boolean skipMissingImportsError,
+                                                boolean force,
                                                 boolean transformSpin) {
-        OntologyManager manager = createManager(personality, skipMissingImportsError, transformSpin);
+        OntologyManager manager = createManager(personality, force, transformSpin);
         if (!allowFollowImports) {
             OntConfig config = manager.getOntologyConfigurator();
             List<OntConfig.Scheme> schemes = Collections.singletonList(OntConfig.DefaultScheme.FILE);
@@ -103,11 +105,11 @@ public class Managers {
 
     /**
      * @param personality             {@link OntPersonality} personalities, can be null
-     * @param skipMissingImportsError true to ignore missing imports
+     * @param force true to ignore missing imports and skip reading wrong axioms.
      * @param transformSpin           true to enable spin transformation
      * @return {@link OntologyManager}
      */
-    public static OntologyManager createManager(OntPersonality personality, boolean skipMissingImportsError, boolean transformSpin) {
+    public static OntologyManager createManager(OntPersonality personality, boolean force, boolean transformSpin) {
         OntologyManager manager = newManager();
         OntConfig config = manager.getOntologyConfigurator();
         if (personality != null) {
@@ -117,8 +119,8 @@ public class Managers {
             GraphTransformers.Store transformers = config.getGraphTransformers();
             config.setGraphTransformers(transformers.addFirst(SpinTransform::new));
         }
-        if (skipMissingImportsError) {
-            config.setMissingImportHandlingStrategy(MissingImportHandlingStrategy.SILENT);
+        if (force) {
+            config.setMissingImportHandlingStrategy(MissingImportHandlingStrategy.SILENT).setIgnoreAxiomsReadErrors(true);
         }
         return manager;
     }
