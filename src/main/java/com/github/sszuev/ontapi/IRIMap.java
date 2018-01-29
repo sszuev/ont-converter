@@ -114,10 +114,20 @@ public class IRIMap implements OWLOntologyIRIMapper {
         return map.isEmpty();
     }
 
+    private static String toFormatString(OWLOntology o) {
+        return Formats.format(o).map(Enum::name).orElse("null");
+    }
+
+    private static String toIRIString(OWLOntology o) {
+        return IRIs.toName(o.getOntologyID(), IRI.create("anonymous")).getIRIString();
+    }
+
     @Override
     public String toString() {
-        return map.entrySet().stream().map(e -> e.getKey() + " => " +
-                e.getValue().getOntologyID().getOntologyIRI().map(IRI::getIRIString).orElse("anonymous") +
-                " [" + Formats.format(e.getValue()).map(Enum::name).orElse("null") + "]").collect(Collectors.joining("\n"));
+        return map.entrySet().stream().map(e -> String.format("%s => %s [%s]",
+                e.getKey(),
+                toIRIString(e.getValue()),
+                toFormatString(e.getValue()))).collect(Collectors.joining("\n"));
     }
+
 }

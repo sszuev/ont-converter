@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -109,10 +110,15 @@ public class IRIs {
     }
 
     public static IRI toName(OWLOntologyID id, IRI orElse) {
-        return id.getOntologyIRI().orElse(orElse);
+        return toName(id, () -> orElse);
     }
 
     public static IRI toName(OWLOntology o) {
-        return toName(o.getOntologyID(), o.getOWLOntologyManager().getOntologyDocumentIRI(o));
+        return toName(o.getOntologyID(), () -> o.getOWLOntologyManager().getOntologyDocumentIRI(o));
     }
+
+    private static IRI toName(OWLOntologyID id, Supplier<IRI> orElse) {
+        return id.getOntologyIRI().orElseGet(orElse);
+    }
+
 }

@@ -42,7 +42,7 @@ public class Main {
             System.exit(u.code());
         }
         // configure logger:
-        Level level = args.verbose() ? Level.DEBUG : Level.FATAL;
+        Level level = args.verbose() ? Level.TRACE : Level.FATAL;
         org.apache.log4j.Logger.getRootLogger().setLevel(level);
         LOGGER.debug(args.asString());
         process(args);
@@ -106,7 +106,8 @@ public class Main {
 
     private static OWLOntologyID load(OntologyManager manager, OWLOntologyDocumentSource source, boolean ignoreErrors) throws OntApiException {
         try {
-            return Managers.loadOntology(manager, source).getOntologyID();
+            OWLOntology o = Managers.loadOntology(manager, source);
+            return o.getOntologyID();
         } catch (OWLOntologyCreationException | OntApiException | UnloadableImportException e) {
             IRI iri = IRIs.getDocumentIRI(source);
             if (ignoreErrors) {
