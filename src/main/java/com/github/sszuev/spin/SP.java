@@ -24,7 +24,8 @@ import org.topbraid.spin.vocabulary.SPL;
  */
 @SuppressWarnings("WeakerAccess")
 public class SP {
-    public static final String BASE_URI = "http://spinrdf.org/sp";
+    public static final String SPIN_URI = "http://spinrdf.org";
+    public static final String BASE_URI = SPIN_URI + "/sp";
     public static final String NS = BASE_URI + "#";
     public static final String PREFIX = "sp";
 

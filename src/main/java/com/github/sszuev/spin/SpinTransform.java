@@ -1,21 +1,21 @@
 package com.github.sszuev.spin;
 
-import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import com.github.sszuev.ontapi.OWLStreamManager;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.rdf.model.*;
 import org.topbraid.spin.model.*;
-
-import com.github.sszuev.ontapi.OWLStreamManager;
+import ru.avicomp.ontapi.config.OntConfig;
 import ru.avicomp.ontapi.jena.OntJenaException;
 import ru.avicomp.ontapi.jena.utils.Graphs;
 import ru.avicomp.ontapi.jena.utils.Models;
 import ru.avicomp.ontapi.jena.vocabulary.RDF;
 import ru.avicomp.ontapi.transforms.Transform;
+
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Copy-paste from ONT-API tests: see ru.avicomp.ontapi.utils.SpinTransform.
@@ -62,6 +62,7 @@ import ru.avicomp.ontapi.transforms.Transform;
  * Please configure it before.
  *
  * @see OWLStreamManager
+ * @see OntConfig#disableWebAccess()
  * <p>
  * Created by @szuev on 10.01.2018.
  */
@@ -94,6 +95,12 @@ public class SpinTransform extends Transform {
                     .forEach(statement -> getBaseModel().remove(statement));
             getBaseModel().add(query, SP.text, literal);
         });
+    }
+
+    @Override
+    public boolean test() {
+        return Stream.concat(getGraph().getPrefixMapping().getNsPrefixMap().values().stream(),
+                Graphs.getImports(getGraph()).stream()).anyMatch(u -> u.startsWith(SP.SPIN_URI));
     }
 
     @Override

@@ -1,5 +1,18 @@
 package com.github.sszuev;
 
+import com.github.sszuev.ontapi.IRIMap;
+import com.github.sszuev.utils.IRIs;
+import com.github.sszuev.utils.Managers;
+import org.apache.log4j.Level;
+import org.semanticweb.owlapi.formats.PrefixDocumentFormat;
+import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
+import org.semanticweb.owlapi.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.avicomp.ontapi.OntApiException;
+import ru.avicomp.ontapi.OntologyManager;
+import sun.misc.Unsafe;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
@@ -10,20 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import org.apache.log4j.Level;
-import org.semanticweb.owlapi.formats.PrefixDocumentFormat;
-import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
-import org.semanticweb.owlapi.model.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.github.sszuev.ontapi.IRIMap;
-import com.github.sszuev.utils.IRIs;
-import com.github.sszuev.utils.Managers;
-import ru.avicomp.ontapi.OntApiException;
-import ru.avicomp.ontapi.OntologyManager;
-import sun.misc.Unsafe;
 
 /**
  * Created by @szuev on 09.01.2018.
@@ -42,7 +41,7 @@ public class Main {
             System.exit(u.code());
         }
         // configure logger:
-        Level level = args.verbose() ? Level.TRACE : Level.FATAL;
+        Level level = args.verbose() ? Level.DEBUG : Level.FATAL;
         org.apache.log4j.Logger.getRootLogger().setLevel(level);
         LOGGER.debug(args.asString());
         process(args);
@@ -60,7 +59,7 @@ public class Main {
 
     private static void processFile(Args args) throws OntApiException {
         Path file = args.getInput();
-        OntologyManager manager = Managers.createManager(args.getPersonality(), args.web(), args.spin(), args.force());
+        OntologyManager manager = Managers.createManager(args.getPersonality(), args.web(), args.force(), args.spin());
         OWLOntologyDocumentSource source = IRIs.toSource(IRI.create(file.toUri()), args.getInputFormat());
         OWLOntologyID id = load(manager, source, args.force());
         if (id == null) return;
@@ -119,6 +118,7 @@ public class Main {
     }
 
     private static void save(OntologyManager manager, Map<IRI, OWLOntologyID> map, Args args) {
+        LOGGER.debug("Total number of ontologies in the manager: {}", manager.ontologies().count());
         if (args.refine()) {
             LOGGER.info("Refine...");
             manager = Managers.copyManager(manager);
@@ -190,46 +190,5 @@ public class Main {
         }
     }
 
-    public static class SimpleTest { // todo: remove
-        public static void main(String... args) throws Exception {
-            String cmd = "-i ..\\..\\ont-api\\out -o out-2 -of 0 -v -f";
-            Main.main(cmd.split("\\s+"));
-        }
-    }
-
-    public static class SimpleTestP { // todo: remove
-        public static void main(String... args) throws Exception {
-            String cmd = "-i ..\\..\\ont-api\\out -o out-1 -of 0 -v -f -p 2";
-            Main.main(cmd.split("\\s+"));
-        }
-    }
-
-    public static class SimpleTestMN { // todo: remove
-        public static void main(String... args) throws Exception {
-            String cmd = "-i ..\\..\\ont-api\\out -o out-3 -of 12 -v -f";
-            Main.main(cmd.split("\\s+"));
-        }
-    }
-
-    public static class SimpleTestF { // todo: remove
-        public static void main(String... args) throws Exception {
-            String cmd = "-i ..\\..\\ont-api\\out -o out-f -of 13 -v";
-            Main.main(cmd.split("\\s+"));
-        }
-    }
-
-    public static class SimpleTestRefine { // todo: remove
-        public static void main(String... args) throws Exception {
-            String cmd = "-i ..\\..\\ont-api\\src\\test\\resources -o out-3 -of 12 -v -f -r";
-            Main.main(cmd.split("\\s+"));
-        }
-    }
-
-    public static class HelpPrint { // todo: remove
-        public static void main(String... args) throws Exception {
-            Main.main("-h");
-        }
-
-    }
 
 }
