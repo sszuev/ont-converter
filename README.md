@@ -100,8 +100,8 @@
 | LATEX | OWL-API | 21, latex, tex |
  
  ### Requirements:
-* java8+
+* java1.8
 * maven to build (`mvn package`)
 
  ### Dependencies:
- [ONT-API](https://github.com/avicomp/ont-api)(__now 1.1.0-SNAPSHOT__)
+ [ONT-API](https://github.com/avicomp/ont-api) (__version 1.1.0-SNAPSHOT__)

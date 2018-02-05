@@ -40,6 +40,24 @@
             <version>3.6.0</version>
         </dependency>
         <dependency>
+            <groupId>net.sourceforge.owlapi</groupId>
+            <artifactId>owlapi-parsers</artifactId>
+            <version>5.1.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.sourceforge.owlapi</groupId>
+            <artifactId>owlapi-rio</artifactId>
+            <version>5.1.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.sourceforge.owlapi</groupId>
+            <artifactId>owlapi-oboformat</artifactId>
+            <version>5.1.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.topbraid</groupId>
             <artifactId>shacl</artifactId>
             <version>1.0.1</version>
