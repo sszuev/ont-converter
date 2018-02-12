@@ -74,15 +74,15 @@ This is a kind of [ONT-API](https://github.com/avicomp/ont-api) extension.
                                 otherwise the specified directory (see
                                 --input) will be used as the only source.`
 
-### Example (Turtle -> Manchester Syntax):
+### Example (RDF/XML -> Manchester Syntax):
 
-`$ java -jar ont-converter.jar -i /tmp/pizza.ttl -if 0 -o /tmp/pizza.omn -of 12 -v`
+`$ java -jar ont-converter.jar -i /tmp/pizza.owl.xml -if 1 -o /tmp/pizza.omn -of 12 -v`
 where 
-* `-i /tmp/pizza.ttl` - the path to existing source file.
-* `-if 0` - explicit format (could be also `-if turtle` or `-if ttl`), optional.
-* `-o /tmp/pizza.omn` - the path to target file.
-* `-of 12` - output format (could be also `-of omn`, `-of manchestersyntax`, `-of manchester_syntax`), required.
-* `-v` - to print progress info to console
+* `-i /tmp/pizza.owl.xml` - the path to existing source file, required. In the example above it is [pizza.owl](https://protege.stanford.edu/ontologies/pizza/pizza.owl).
+* `-if 1` - the explicit input format (could be also `-if rdf`, `-if rdf/xml` or `-if rdf_xml`), optional.
+* `-o /tmp/pizza.omn` - the path to target file, required.
+* `-of 12` - the output format (could be also `-of omn`, `-of manchestersyntax`, `-of manchester_syntax`), required.
+* `-v` - to print progress info to console, optional.
                                 
 ### Full list of supported formats:
 | Name | Provider | Read / Write | Aliases (case insensitive) |
