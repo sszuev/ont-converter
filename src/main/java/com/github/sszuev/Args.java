@@ -27,15 +27,17 @@ import java.util.stream.Stream;
  */
 public class Args {
     private static final String JAR_NAME = "ont-converter.jar";
+    private static final int NAME_COL_LENGTH = 19;
+    private static final int PROVIDER_COL_LENGTH = 13;
+    private static final int READ_WRITE_COL_LENGTH = 13;
     private final Path input, output;
     private final OntFormat outFormat, inFormat;
     private final Configurable.Mode personality;
     private final boolean spin, force, refine, verbose, webAccess;
-
     private boolean outDir, inDir;
 
-    Args(Path input, Path output, OntFormat outFormat, OntFormat inFormat, Configurable.Mode personality,
-         boolean spin, boolean force, boolean clear, boolean verbose, boolean webAccess) {
+    private Args(Path input, Path output, OntFormat outFormat, OntFormat inFormat, Configurable.Mode personality,
+                 boolean spin, boolean force, boolean clear, boolean verbose, boolean webAccess) {
         this.input = input;
         this.output = output;
         this.outFormat = outFormat;
@@ -132,20 +134,32 @@ public class Args {
         if (usage) {
             sb.append("Full list of supported formats:").append("\n");
             sb.append(" ").append(formatHeader()).append("\n");
-            OntFormat.formats()
-                    .filter(f -> f.isReadSupported() || f.isWriteSupported())
-                    .map(Args::formatLine)
-                    .forEach(x -> sb.append(" ").append(x).append("\n"));
+            try {
+                Formats.registerJenaCSV();
+                OntFormat.formats()
+                        .filter(f -> f.isReadSupported() || f.isWriteSupported())
+                        .map(Args::formatLine)
+                        .forEach(x -> sb.append(" ").append(x).append("\n"));
+            } finally {
+                Formats.unregisterJenaCSV();
+            }
         }
         return sb.toString();
     }
 
     private static String formatLine(OntFormat f) {
-        return StringUtils.rightPad(f.name(), 20) + StringUtils.rightPad(f.isJena() ? "Apache Jena" : "OWL-API", 14) + Formats.aliases(f).stream().collect(Collectors.joining(", "));
+        return StringUtils.rightPad(f.name(), NAME_COL_LENGTH) +
+                StringUtils.rightPad(f.isJena() ? "Apache Jena" : "OWL-API", PROVIDER_COL_LENGTH) +
+                StringUtils.rightPad(f.isReadSupported() + "/" + f.isWriteSupported(), READ_WRITE_COL_LENGTH) +
+                Formats.aliases(f).stream().collect(Collectors.joining(", "));
+
     }
 
     private static String formatHeader() {
-        return StringUtils.rightPad("Name:", 20) + StringUtils.rightPad("Provider:", 14) + "Aliases (case insensitive):";
+        return StringUtils.rightPad("Name:", NAME_COL_LENGTH) +
+                StringUtils.rightPad("Provider:", PROVIDER_COL_LENGTH) +
+                StringUtils.rightPad("Read/Write:", READ_WRITE_COL_LENGTH) +
+                "Aliases (case insensitive):";
     }
 
     public boolean verbose() {
@@ -225,20 +239,6 @@ public class Args {
                 verbose, force, webAccess, refine, spin);
     }
 
-    public static class UsageException extends IllegalArgumentException {
-        private final int code;
-
-        UsageException(String s, int code) {
-            super(s);
-            this.code = code;
-        }
-
-        public int code() {
-            return code;
-        }
-    }
-
-
     public enum Opts {
         HELP("h", "help", "Print usage."),
         VERBOSE("v", "verbose", "To print progress messages to console."),
@@ -309,6 +309,19 @@ public class Args {
                 res.hasArgs().argName(argType);
             }
             return res.build();
+        }
+    }
+
+    public static class UsageException extends IllegalArgumentException {
+        private final int code;
+
+        UsageException(String s, int code) {
+            super(s);
+            this.code = code;
+        }
+
+        public int code() {
+            return code;
         }
     }
 }

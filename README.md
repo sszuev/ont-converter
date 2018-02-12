@@ -1,6 +1,7 @@
 # Ontology Converter v1.0
 
 ## A simple command-line utility to convert any rdf graph to OWL2-DL ontology.
+This is a kind of [ONT-API](https://github.com/avicomp/ont-api) extension.  
 
 ### Usage: `java -jar ont-converter.jar [-f] [-h] -i <path> [-if <format>] -o <path> -of <format> [-p <0|1|2>] [-r] [-s] [-v] [-w]`
 
@@ -73,31 +74,34 @@
                                 otherwise the specified directory (see
                                 --input) will be used as the only source.`
 
+### Example (Turtle -> Manchester Syntax):
+
+`$ java -jar ont-converter.jar -i /tmp/pizza.ttl -if 0 -o /tmp/pizza.omn -of 19 -v`
                                 
 ### Full list of supported formats:
-| Name | Provider | Aliases (case insensitive) |
-| :------------- | :-------------| :----- |
-| TURTLE | Apache Jena | 0, turtle, ttl |
-| RDF_XML | Apache Jena | 1, rdf_xml, rdf/xml, rdf |
-| RDF_JSON | Apache Jena | 2, rdf_json, rdf/json, rj |
-| JSON_LD | Apache Jena | 3, json_ld, json-ld, jsonld |
-| NTRIPLES | Apache Jena | 4, ntriples, n-triples, nt |
-| NQUADS | Apache Jena | 5, nquads, n-quads, nq |
-| TRIG | Apache Jena | 6, trig |
-| TRIX | Apache Jena | 7, trix |
-| RDF_THRIFT | Apache Jena | 8, rdf_thrift, rdf-thrift, trdf |
-| CSV | Apache Jena | 9, csv |
-| OWL_XML | OWL-API | 11, owl_xml, owl/xml, owl |
-| MANCHESTER_SYNTAX | OWL-API | 12, manchester_syntax, manchestersyntax, omn |
-| FUNCTIONAL_SYNTAX | OWL-API | 13, functional_syntax, functionalsyntax, fss |
-| BINARY_RDF | OWL-API | 14, binary_rdf, binaryrdf, brf |
-| RDFA | OWL-API | 15, rdfa, xhtml |
-| OBO | OWL-API | 16, obo |
-| KRSS | OWL-API | 17, krss |
-| KRSS2 | OWL-API | 18, krss2 |
-| DL | OWL-API | 19, dl |
-| DL_HTML | OWL-API | 20, dl_html, dl/html, html |
-| LATEX | OWL-API | 21, latex, tex |
+| Name | Provider | Read / Write | Aliases (case insensitive) |
+| :-------------  | :------------- | :-------------| :----- |
+| TURTLE | Apache Jena | yes / yes | 0, turtle, ttl |
+| RDF_XML | Apache Jena | yes / yes | 1, rdf_xml, rdf/xml, rdf |
+| RDF_JSON | Apache Jena | yes / yes | 2, rdf_json, rdf/json, rj |
+| JSON_LD | Apache Jena | yes / yes | 3, json_ld, json-ld, jsonld |
+| NTRIPLES | Apache Jena | yes / yes | 4, ntriples, n-triples, nt |
+| NQUADS | Apache Jena | yes / yes | 5, nquads, n-quads, nq |
+| TRIG | Apache Jena | yes / yes | 6, trig |
+| TRIX | Apache Jena | yes / yes | 7, trix |
+| RDF_THRIFT | Apache Jena | yes / yes | 8, rdf_thrift, rdf-thrift, trdf |
+| CSV | Apache Jena | yes / no | 9, csv |
+| OWL_XML | OWL-API | yes / yes | 11, owl_xml, owl/xml, owl |
+| MANCHESTER_SYNTAX | OWL-API | yes / yes | 12, manchester_syntax, manchestersyntax, omn |
+| FUNCTIONAL_SYNTAX | OWL-API | yes / yes | 13, functional_syntax, functionalsyntax, fss |
+| BINARY_RDF | OWL-API | yes / yes | 14, binary_rdf, binaryrdf, brf |
+| RDFA | OWL-API | yes / no | 15, rdfa, xhtml |
+| OBO | OWL-API | yes / yes | 16, obo |
+| KRSS | OWL-API | yes / yes | 17, krss |
+| KRSS2 | OWL-API | yes / yes | 18, krss2 |
+| DL | OWL-API | yes / yes | 19, dl |
+| DL_HTML | OWL-API | no / yes | 20, dl_html, dl/html, html |
+| LATEX | OWL-API | no / yes | 21, latex, tex |
  
  ### Requirements:
 * java1.8
