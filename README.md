@@ -76,7 +76,13 @@ This is a kind of [ONT-API](https://github.com/avicomp/ont-api) extension.
 
 ### Example (Turtle -> Manchester Syntax):
 
-`$ java -jar ont-converter.jar -i /tmp/pizza.ttl -if 0 -o /tmp/pizza.omn -of 19 -v`
+`$ java -jar ont-converter.jar -i /tmp/pizza.ttl -if 0 -o /tmp/pizza.omn -of 12 -v`
+where 
+* `-i /tmp/pizza.ttl` - the path to existing source file.
+* `-if 0` - explicit format (could be also `-if turtle` or `-if ttl`), optional.
+* `-o /tmp/pizza.omn` - the path to target file.
+* `-of 12` - output format (could be also `-of omn`, `-of manchestersyntax`, `-of manchester_syntax`), required.
+* `-v` - to print progress info to console
                                 
 ### Full list of supported formats:
 | Name | Provider | Read / Write | Aliases (case insensitive) |
