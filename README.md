@@ -1,7 +1,8 @@
 # Ontology Converter v1.0
 
 ## A simple command-line utility to convert any rdf graph to OWL2-DL ontology.
-This is a kind of [ONT-API](https://github.com/avicomp/ont-api) extension.  
+This is a kind of [ONT-API](https://github.com/avicomp/ont-api) extension, without a claim. Can work both with single ontology file source and with directory containing dependent or independent sources. 
+The utility automatically transforms the source RDF Graph to the OWL2 DL syntax according to the inner rules and command-line options. For example, if there is no `owl:Ontology` section inside rdf-graph, which is required by OWL, an anonymous ontology header will be generated. 
 
 ### Usage: `java -jar ont-converter.jar [-f] [-h] -i <path> [-if <format>] -o <path> -of <format> [-p <0|1|2>] [-r] [-s] [-v] [-w]`
 
@@ -77,6 +78,7 @@ This is a kind of [ONT-API](https://github.com/avicomp/ont-api) extension.
 ### Example (RDF/XML -> Manchester Syntax):
 
 `$ java -jar ont-converter.jar -i /tmp/pizza.owl.xml -if 1 -o /tmp/pizza.omn -of 12 -v`
+
 where 
 * `-i /tmp/pizza.owl.xml` - the path to existing source file, required. In the example above it is [pizza.owl](https://protege.stanford.edu/ontologies/pizza/pizza.owl).
 * `-if 1` - the explicit input format (could be also `-if rdf`, `-if rdf/xml` or `-if rdf_xml`), optional.
