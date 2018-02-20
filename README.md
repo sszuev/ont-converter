@@ -105,7 +105,6 @@ where
 | BINARY_RDF | OWL-API | yes / yes | 14, binary_rdf, binaryrdf, brf |
 | RDFA | OWL-API | yes / no | 15, rdfa, xhtml |
 | OBO | OWL-API | yes / yes | 16, obo |
-| KRSS | OWL-API | yes / yes | 17, krss |
 | KRSS2 | OWL-API | yes / yes | 18, krss2 |
 | DL | OWL-API | yes / yes | 19, dl |
 | DL_HTML | OWL-API | no / yes | 20, dl_html, dl/html, html |
