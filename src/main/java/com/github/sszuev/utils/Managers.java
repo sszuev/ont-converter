@@ -1,11 +1,8 @@
 package com.github.sszuev.utils;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
+import com.github.sszuev.ontapi.IRIMap;
+import com.github.sszuev.ontapi.OWLStreamManager;
+import com.github.sszuev.spin.SpinTransform;
 import org.apache.jena.riot.system.stream.StreamManager;
 import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.io.UnparsableOntologyException;
@@ -13,15 +10,17 @@ import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.OntologyCopy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.github.sszuev.ontapi.IRIMap;
-import com.github.sszuev.ontapi.OWLStreamManager;
-import com.github.sszuev.spin.SpinTransform;
 import ru.avicomp.ontapi.*;
 import ru.avicomp.ontapi.config.OntConfig;
 import ru.avicomp.ontapi.jena.impl.configuration.OntModelConfig;
 import ru.avicomp.ontapi.jena.impl.configuration.OntPersonality;
 import ru.avicomp.ontapi.transforms.GraphTransformers;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Created by @szuev on 15.01.2018.
@@ -48,7 +47,9 @@ public class Managers {
      * This manager is soft:
      * missing imports are ignored,
      * all punnings are allowed,
-     * no transformations
+     * no transformations.
+     * any errors while collecting axioms are ignored
+     * (note: there are no processing axioms if it is valid rdf-document which can be parse by jena, otherwise true OWL-Parsers are called)
      *
      * @return {@link OntologyManager}
      */
@@ -58,7 +59,8 @@ public class Managers {
                 .setMissingImportHandlingStrategy(MissingImportHandlingStrategy.SILENT)
                 .setPerformTransformation(false)
                 .setSupportedSchemes(Collections.singletonList(OntConfig.DefaultScheme.FILE))
-                .setPersonality(OntModelConfig.ONT_PERSONALITY_LAX);
+                .setPersonality(OntModelConfig.ONT_PERSONALITY_LAX)
+                .setIgnoreAxiomsReadErrors(true);
         return manager;
     }
 

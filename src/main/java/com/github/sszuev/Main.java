@@ -177,6 +177,8 @@ public class Main {
     }
 
     private static void forceDisableExternalLogging() {
+        // somewhere from caffeine (?):
+        java.util.logging.LogManager.getLogManager().reset();
         try {
             // java9:
             Class clazz = Class.forName("jdk.internal.module.IllegalAccessLogger");
