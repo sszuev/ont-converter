@@ -1,11 +1,5 @@
 package com.github.sszuev.utils;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import org.apache.jena.lang.csv.ReaderRIOTFactoryCSV;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFParserRegistry;
@@ -13,12 +7,17 @@ import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntology;
-
 import ru.avicomp.ontapi.OntFormat;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Utils to work with {@link OntFormat format}s.
- *
+ * <p>
  * Created by @szuev on 11.01.2018.
  */
 @SuppressWarnings("WeakerAccess")
@@ -40,6 +39,7 @@ public class Formats {
 
     /**
      * Returns format aliases
+     *
      * @param f {@link OntFormat}, not null
      * @return List of stings corresponding specified format.
      */
@@ -52,6 +52,7 @@ public class Formats {
     /**
      * Registers {@link Lang#CSV} in jena system.
      * This operation enables {@link OntFormat#CSV} for reading operations.
+     *
      * @see #unregisterJenaCSV()
      */
     public static void registerJenaCSV() {
@@ -61,6 +62,7 @@ public class Formats {
 
     /**
      * unregisters csv format
+     *
      * @see #registerJenaCSV()
      */
     public static void unregisterJenaCSV() {
@@ -69,6 +71,7 @@ public class Formats {
 
     /**
      * Determines is the specified resource can be treated as csv-file.
+     *
      * @param iri {@link IRI}
      * @return true if the resource has extension '.csv'
      */

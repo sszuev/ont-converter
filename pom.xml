@@ -13,6 +13,10 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skipTests>true</skipTests>
+        <version.ontapi>1.4.0-SNAPSHOT</version.ontapi>
+        <version.jena>3.8.0</version.jena>
+        <version.owlapi>5.1.7</version.owlapi>
+        <version.slf4j>1.7.25</version.slf4j>
     </properties>
 
     <repositories>
@@ -32,27 +36,27 @@
         <dependency>
             <groupId>ru.avicomp</groupId>
             <artifactId>ontapi</artifactId>
-            <version>1.1.0-SNAPSHOT</version>
+            <version>${version.ontapi}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-csv</artifactId>
-            <version>3.6.0</version>
+            <version>${version.jena}</version>
         </dependency>
         <dependency>
             <groupId>net.sourceforge.owlapi</groupId>
             <artifactId>owlapi-parsers</artifactId>
-            <version>5.1.4</version>
+            <version>${version.owlapi}</version>
         </dependency>
         <dependency>
             <groupId>net.sourceforge.owlapi</groupId>
             <artifactId>owlapi-rio</artifactId>
-            <version>5.1.4</version>
+            <version>${version.owlapi}</version>
         </dependency>
         <dependency>
             <groupId>net.sourceforge.owlapi</groupId>
             <artifactId>owlapi-oboformat</artifactId>
-            <version>5.1.4</version>
+            <version>${version.owlapi}</version>
         </dependency>
         <dependency>
             <groupId>org.topbraid</groupId>
@@ -71,8 +75,13 @@
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${version.slf4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.22</version>
+            <version>${version.slf4j}</version>
         </dependency>
     </dependencies>
 

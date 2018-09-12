@@ -5,9 +5,8 @@ import org.apache.commons.cli.*;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import ru.avicomp.ontapi.OntFormat;
-import ru.avicomp.ontapi.jena.impl.configuration.Configurable;
-import ru.avicomp.ontapi.jena.impl.configuration.OntModelConfig;
-import ru.avicomp.ontapi.jena.impl.configuration.OntPersonality;
+import ru.avicomp.ontapi.jena.impl.conf.OntModelConfig;
+import ru.avicomp.ontapi.jena.impl.conf.OntPersonality;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -32,12 +31,20 @@ public class Args {
     private static final int READ_WRITE_COL_LENGTH = 13;
     private final Path input, output;
     private final OntFormat outFormat, inFormat;
-    private final Configurable.Mode personality;
+    private final OntModelConfig.StdMode personality;
     private final boolean spin, force, refine, verbose, webAccess;
     private boolean outDir, inDir;
 
-    private Args(Path input, Path output, OntFormat outFormat, OntFormat inFormat, Configurable.Mode personality,
-                 boolean spin, boolean force, boolean clear, boolean verbose, boolean webAccess) {
+    private Args(Path input,
+                 Path output,
+                 OntFormat outFormat,
+                 OntFormat inFormat,
+                 OntModelConfig.StdMode personality,
+                 boolean spin,
+                 boolean force,
+                 boolean clear,
+                 boolean verbose,
+                 boolean webAccess) {
         this.input = input;
         this.output = output;
         this.outFormat = outFormat;
@@ -67,7 +74,7 @@ public class Args {
         // parse
         OntFormat outputFormat = parseOutputFormat(cmd);
         OntFormat inputFormat = parseInputFormat(cmd);
-        Configurable.Mode mode = parsePersonalities(cmd);
+        OntModelConfig.StdMode mode = parsePersonalities(cmd);
 
         Path in = Paths.get(cmd.getOptionValue(Opts.INPUT.longName)).toRealPath();
         Path out = Paths.get(cmd.getOptionValue(Opts.OUTPUT.longName));
@@ -111,13 +118,14 @@ public class Args {
         return res;
     }
 
-    private static Configurable.Mode parsePersonalities(CommandLine cmd) {
+    private static OntModelConfig.StdMode parsePersonalities(CommandLine cmd) {
         if (!cmd.hasOption(Opts.PUNNING.longName)) {
-            return Configurable.Mode.LAX;
+            return OntModelConfig.StdMode.LAX;
         }
         String val = cmd.getOptionValue(Opts.PUNNING.longName);
+        OntModelConfig.StdMode[] values = OntModelConfig.StdMode.values();
         try {
-            return Configurable.Mode.values()[Configurable.Mode.values().length - Integer.parseInt(val)];
+            return values[values.length - Integer.parseInt(val)];
         } catch (NumberFormatException | IndexOutOfBoundsException e) {
             throw new IllegalArgumentException("Wrong --" + Opts.PUNNING.longName + ":" + val, e);
         }
@@ -129,7 +137,8 @@ public class Args {
             sb.append("A simple command-line utility to convert any rdf graph to OWL2-DL ontology.").append("\n");
         }
         StringWriter sw = new StringWriter();
-        new HelpFormatter().printHelp(new PrintWriter(sw), 74, "java -jar " + JAR_NAME, "options:", opts, 1, 3, null, true);
+        new HelpFormatter().printHelp(new PrintWriter(sw), 74, "java -jar " + JAR_NAME,
+                "options:", opts, 1, 3, null, true);
         sb.append(sw);
         if (usage) {
             sb.append("Full list of supported formats:").append("\n");

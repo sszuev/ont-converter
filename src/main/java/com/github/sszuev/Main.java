@@ -103,7 +103,9 @@ public class Main {
         }
     }
 
-    private static OWLOntologyID load(OntologyManager manager, OWLOntologyDocumentSource source, boolean ignoreErrors) throws OntApiException {
+    private static OWLOntologyID load(OntologyManager manager,
+                                      OWLOntologyDocumentSource source,
+                                      boolean ignoreErrors) throws OntApiException {
         try {
             OWLOntology o = Managers.loadOntology(manager, source);
             return o.getOntologyID();

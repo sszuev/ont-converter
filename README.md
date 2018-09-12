@@ -1,8 +1,11 @@
 # Ontology Converter v1.0
 
-## A simple command-line utility to convert any rdf graph to OWL2-DL ontology.
-This is a kind of [ONT-API](https://github.com/avicomp/ont-api) extension, without a claim. Can work both with single ontology file source and with directory containing dependent or independent sources. 
-The utility automatically transforms the source RDF Graph to the OWL2 DL syntax according to the inner rules and command-line options. For example, if there is no `owl:Ontology` section inside rdf-graph, which is required by OWL, an anonymous ontology header will be generated. 
+## A simple command-line utility to convert any RDF graph to OWL2-DL ontology.
+This is a kind of [ONT-API](https://github.com/avicomp/ont-api) extension with intentionally straightforward realisation.
+Can work both with single ontology file source and with directory containing dependent or independent sources. 
+The utility automatically transforms the source RDF Graph to the OWL2 DL syntax according to the internal rules and command-line options. 
+For example, if there is no `owl:Ontology` section inside rdf-graph, which is required by OWL, an anonymous ontology header will be generated. 
+This is a tool, not a library, and, therefore, it is available only in the form of code and prebuilt jar (see [/releases](https://github.com/sszuev/ont-converter/releases)).
 
 ### Usage: `java -jar ont-converter.jar [-f] [-h] -i <path> [-if <format>] -o <path> -of <format> [-p <0|1|2>] [-r] [-s] [-v] [-w]`
 
@@ -114,5 +117,8 @@ where
 * java1.8
 * maven to build (`mvn package`)
 
+### Issues:
+In case of any issue (for example the program hangs), please report it into the [/ont-converter/issues](https://github.com/sszuev/ont-converter/issues) page, but only if you really sure that the problem is in the program, not in the underlying API. Otherwise please refer to the [/ont-api/issues](https://github.com/avicomp/ont-api/issues) page.
+
  ### Dependencies:
- [ONT-API](https://github.com/avicomp/ont-api) (__version 1.1.0-SNAPSHOT__)
+ [ONT-API](https://github.com/avicomp/ont-api) (__version 1.4.0-SNAPSHOT__)

@@ -12,8 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.avicomp.ontapi.*;
 import ru.avicomp.ontapi.config.OntConfig;
-import ru.avicomp.ontapi.jena.impl.configuration.OntModelConfig;
-import ru.avicomp.ontapi.jena.impl.configuration.OntPersonality;
+import ru.avicomp.ontapi.jena.impl.conf.OntModelConfig;
+import ru.avicomp.ontapi.jena.impl.conf.OntPersonality;
 import ru.avicomp.ontapi.transforms.GraphTransformers;
 
 import java.io.IOException;
@@ -49,7 +49,8 @@ public class Managers {
      * all punnings are allowed,
      * no transformations.
      * any errors while collecting axioms are ignored
-     * (note: there are no processing axioms if it is valid rdf-document which can be parse by jena, otherwise true OWL-Parsers are called)
+     * (note: there are no processing axioms if it is valid rdf-document which can be parse by jena,
+     * otherwise true OWL-Parsers are called)
      *
      * @return {@link OntologyManager}
      */
@@ -67,13 +68,17 @@ public class Managers {
     /**
      * Creates a manager without web-access
      *
-     * @param personality        {@link OntPersonality} personalities, can be null
-     * @param map                {@link IRIMap} the mapper
-     * @param force true to force load/store ontologies
-     * @param transformSpin      if true run {@link SpinTransform} to fix bulk []-List based SPARQL-Queries, which can be present in spin-library rdf-ontologies.
+     * @param personality   {@link OntPersonality} personalities, can be null
+     * @param map           {@link IRIMap} the mapper
+     * @param force         true to force load/store ontologies
+     * @param transformSpin if true run {@link SpinTransform} to fix bulk []-List based SPARQL-Queries,
+     *                      which can be present in spin-library rdf-ontologies.
      * @return {@link OntologyManager}
      */
-    public static OntologyManager createManager(OntPersonality personality, IRIMap map, boolean force, boolean transformSpin) {
+    public static OntologyManager createManager(OntPersonality personality,
+                                                IRIMap map,
+                                                boolean force,
+                                                boolean transformSpin) {
         OntologyManager manager = createManager(personality, force, transformSpin);
         OntConfig config = manager.getOntologyConfigurator();
         config.setSupportedSchemes(Collections.singletonList(OntConfig.DefaultScheme.FILE));
@@ -83,10 +88,10 @@ public class Managers {
     }
 
     /**
-     * @param personality             {@link OntPersonality} personalities, can be null
-     * @param allowFollowImports      true to prohibit web-traversing for owl:imports
-     * @param force true to ignore missing imports skip reading wrong axioms.
-     * @param transformSpin           true to enable spin transformation
+     * @param personality        {@link OntPersonality} personalities, can be null
+     * @param allowFollowImports true to prohibit web-traversing for owl:imports
+     * @param force              true to ignore missing imports skip reading wrong axioms.
+     * @param transformSpin      true to enable spin transformation
      * @return {@link OntologyManager}
      */
     public static OntologyManager createManager(OntPersonality personality,
@@ -104,9 +109,9 @@ public class Managers {
     }
 
     /**
-     * @param personality             {@link OntPersonality} personalities, can be null
-     * @param force true to ignore missing imports and skip reading wrong axioms.
-     * @param transformSpin           true to enable spin transformation
+     * @param personality   {@link OntPersonality} personalities, can be null
+     * @param force         true to ignore missing imports and skip reading wrong axioms.
+     * @param transformSpin true to enable spin transformation
      * @return {@link OntologyManager}
      */
     public static OntologyManager createManager(OntPersonality personality, boolean force, boolean transformSpin) {
@@ -120,7 +125,8 @@ public class Managers {
             config.setGraphTransformers(transformers.addFirst(SpinTransform::new));
         }
         if (force) {
-            config.setMissingImportHandlingStrategy(MissingImportHandlingStrategy.SILENT).setIgnoreAxiomsReadErrors(true);
+            config.setMissingImportHandlingStrategy(MissingImportHandlingStrategy.SILENT)
+                    .setIgnoreAxiomsReadErrors(true);
         }
         return manager;
     }
@@ -140,12 +146,12 @@ public class Managers {
         src.forEach(o -> {
             IRI name = IRIs.toName(o);
             LOGGER.trace("Copy ontology {}", name);
-                    try {
-                        to.copyOntology(o, OntologyCopy.DEEP);
-                    } catch (OWLOntologyCreationException e) {
-                        ex.addSuppressed(e);
-                    }
-                });
+            try {
+                to.copyOntology(o, OntologyCopy.DEEP);
+            } catch (OWLOntologyCreationException e) {
+                ex.addSuppressed(e);
+            }
+        });
         if (!ignoreExceptions && ex.getSuppressed().length != 0) {
             throw ex;
         }
@@ -166,7 +172,8 @@ public class Managers {
 
     /**
      * Loads an ontology to manager.
-     * Since {@link org.apache.jena.riot.Lang#CSV} is very tolerant (almost all textual files could be treated as CSV table)
+     * Since {@link org.apache.jena.riot.Lang#CSV} is very tolerant
+     * (almost all textual files could be treated as CSV table)
      * it is excluded from consideration. There is only exception - if the file has extension '.csv'
      *
      * @param manager {@link OntologyManager} the manager to put ontology
@@ -174,9 +181,11 @@ public class Managers {
      * @return {@link OntologyModel} the ontology
      * @throws OWLOntologyCreationException in case of any error
      */
-    public static OntologyModel loadOntology(OntologyManager manager, OWLOntologyDocumentSource source) throws OWLOntologyCreationException {
+    public static OntologyModel loadOntology(OntologyManager manager,
+                                             OWLOntologyDocumentSource source) throws OWLOntologyCreationException {
         Optional<OntFormat> format = Formats.format(source);
-        boolean isCvs = (!format.isPresent() && Formats.isCSV(source.getDocumentIRI())) || format.filter(s -> Objects.equals(s, OntFormat.CSV)).isPresent();
+        boolean isCvs = (!format.isPresent() && Formats.isCSV(source.getDocumentIRI()))
+                || format.filter(s -> Objects.equals(s, OntFormat.CSV)).isPresent();
         try {
             if (isCvs) {
                 Formats.registerJenaCSV();
@@ -188,7 +197,8 @@ public class Managers {
     }
 
     /**
-     * Creates a collection of {@link org.semanticweb.owlapi.model.OWLOntologyIRIMapper} by traversing the specified directory.
+     * Creates a collection of {@link org.semanticweb.owlapi.model.OWLOntologyIRIMapper}
+     * by traversing the specified directory.
      * Each map will content unique ontology-id+file-iri pairs.
      *
      * @param dir    {@link Path} the file (usually directory)
@@ -213,7 +223,10 @@ public class Managers {
      * @throws IOException     if any i/o problem occurs.
      * @throws OntApiException if file is unparsable or unloadable
      */
-    public static List<IRIMap> loadDirectory(Path dir, OntFormat format, Supplier<OntologyManager> factory, boolean continueIfError) throws IOException, OntApiException {
+    public static List<IRIMap> loadDirectory(Path dir,
+                                             OntFormat format,
+                                             Supplier<OntologyManager> factory,
+                                             boolean continueIfError) throws IOException, OntApiException {
         List<IRI> files = IRIs.getFiles(dir);
         List<IRIMap> res = new ArrayList<>();
         while (true) {

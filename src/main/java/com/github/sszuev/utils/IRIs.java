@@ -1,5 +1,14 @@
 package com.github.sszuev.utils;
 
+import org.apache.commons.io.FilenameUtils;
+import org.semanticweb.owlapi.io.FileDocumentSource;
+import org.semanticweb.owlapi.io.IRIDocumentSource;
+import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
+import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyID;
+import ru.avicomp.ontapi.OntFormat;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,19 +20,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.io.FilenameUtils;
-import org.semanticweb.owlapi.io.FileDocumentSource;
-import org.semanticweb.owlapi.io.IRIDocumentSource;
-import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
-import org.semanticweb.owlapi.model.IRI;
-import org.semanticweb.owlapi.model.OWLOntology;
-import org.semanticweb.owlapi.model.OWLOntologyID;
-
-import ru.avicomp.ontapi.OntFormat;
-
 /**
  * The helper to work with {@link IRI}s, usually related to local files.
- *
+ * <p>
  * Created by @szuev on 15.01.2018.
  */
 public class IRIs {
@@ -41,6 +40,7 @@ public class IRIs {
 
     /**
      * Returns all files from a directory, most deep go first, empty files are excluded
+     *
      * @param dir {@link Path}, the directory (but can be file also)
      * @return List of {@link IRI}s
      * @throws IOException if any i/o error occurs.
@@ -52,7 +52,8 @@ public class IRIs {
 
     /**
      * Walks through directory, the output stream are sorted in descending order of file depth
-     * @param dir {@link Path}
+     *
+     * @param dir    {@link Path}
      * @param holder {@link IOException} to collect any internal (file-specified) exceptions
      * @return Stream of {@link IRI}s
      * @throws IOException if i/o error occurs when read directory
@@ -85,8 +86,9 @@ public class IRIs {
 
     /**
      * Creates a document-source from iri and format
+     *
      * @param document {@link IRI}, not null
-     * @param format {@link OntFormat}, nullable
+     * @param format   {@link OntFormat}, nullable
      * @return {@link OWLOntologyDocumentSource}
      */
     public static OWLOntologyDocumentSource toSource(IRI document, OntFormat format) {
