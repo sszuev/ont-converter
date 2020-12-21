@@ -115,7 +115,10 @@ where
  
  ### Requirements:
 * java1.8
-* maven to build (`mvn package`)
+* [maven](https://maven.apache.org/guides/index.html)
+
+### Build:
+Simply run `mvn package` in the project root. All dependencies should be resolved automatically by maven.
 
 ### Issues:
 In case of any issue (for example the program hangs), please report it into the [/ont-converter/issues](https://github.com/sszuev/ont-converter/issues) page, but only if you really sure that the problem is in the program, not in the underlying API. Otherwise please refer to the [/ont-api/issues](https://github.com/avicomp/ont-api/issues) page.
