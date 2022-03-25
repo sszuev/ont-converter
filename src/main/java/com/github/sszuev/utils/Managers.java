@@ -148,7 +148,7 @@ public class Managers {
             LOGGER.trace("Copy ontology {}", name);
             try {
                 to.copyOntology(o, OntologyCopy.DEEP);
-            } catch (OWLOntologyCreationException e) {
+            } catch (Exception e) {
                 ex.addSuppressed(e);
             }
         });

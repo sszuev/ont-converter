@@ -13,7 +13,6 @@ import ru.avicomp.ontapi.transforms.Transform;
 
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,13 +62,11 @@ import java.util.stream.Stream;
  *
  * @see OWLStreamManager
  * @see OntConfig#disableWebAccess()
+ * @see <a href='https://github.com/owlcs/ont-api/blob/2.x.x/src/test/java/com/github/owlcs/ontapi/utils/SpinTransform.java'>com.github.owlcs.ontapi.utils.SpinTransform</a>
  * <p>
  * Created by @szuev on 10.01.2018.
  */
 public class SpinTransform extends Transform {
-
-    private Model model;
-    private Model base;
 
     public SpinTransform(Graph graph) {
         super(graph);
@@ -78,7 +75,7 @@ public class SpinTransform extends Transform {
     @Override
     public void perform() {
         List<Query> queries = queries().collect(Collectors.toList());
-        String name = Graphs.getName(getBaseGraph());
+        String name = Graphs.getName(getQueryModel().getGraph());
         if (!queries.isEmpty() && LOGGER.isDebugEnabled()) {
             LOGGER.debug("[{}] queries count: {}", name, queries.size());
         }
@@ -92,8 +89,8 @@ public class SpinTransform extends Transform {
             Set<Statement> remove = Models.getAssociatedStatements(query);
             remove.stream()
                     .filter(s -> !(RDF.type.equals(s.getPredicate()) && type.equals(s.getObject())))
-                    .forEach(statement -> getBaseModel().remove(statement));
-            getBaseModel().add(query, SP.text, literal);
+                    .forEach(statement -> getWorkModel().remove(statement));
+            getWorkModel().add(query, SP.text, literal);
         });
     }
 
@@ -104,17 +101,12 @@ public class SpinTransform extends Transform {
     }
 
     @Override
-    public Model getModel() {
-        return this.model == null ? (this.model = SP.createModel(this.getGraph())) : this.model;
-    }
-
-    @Override
-    public Model getBaseModel() {
-        return this.base == null ? (this.base = SP.createModel(this.getBaseGraph())) : this.base;
+    public Model createModel(Graph graph) {
+        return SP.createModel(graph);
     }
 
     public Stream<Query> queries() {
-        return Stream.of(QueryType.values()).map(this::queries).flatMap(Function.identity());
+        return Stream.of(QueryType.values()).flatMap(this::queries);
     }
 
     protected Stream<Query> queries(QueryType type) {

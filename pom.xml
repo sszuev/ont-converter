@@ -13,10 +13,10 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skipTests>true</skipTests>
-        <version.ontapi>1.4.0-SNAPSHOT</version.ontapi>
+        <version.ontapi>1.4.2</version.ontapi>
         <version.jena>3.8.0</version.jena>
         <version.owlapi>5.1.7</version.owlapi>
-        <version.slf4j>1.7.25</version.slf4j>
+        <version.slf4j>1.7.36</version.slf4j>
     </properties>
 
     <repositories>
