@@ -28,11 +28,6 @@ import java.util.stream.Collectors;
 public class Managers {
     private static final Logger LOGGER = LoggerFactory.getLogger(Managers.class);
 
-    static {
-        // exclude csv by default:
-        Formats.unregisterJenaCSV();
-    }
-
     /**
      * Creates a new manager with default settings.
      *
@@ -183,17 +178,7 @@ public class Managers {
      */
     public static OntologyModel loadOntology(OntologyManager manager,
                                              OWLOntologyDocumentSource source) throws OWLOntologyCreationException {
-        Optional<OntFormat> format = Formats.format(source);
-        boolean isCvs = (!format.isPresent() && Formats.isCSV(source.getDocumentIRI()))
-                || format.filter(s -> Objects.equals(s, OntFormat.CSV)).isPresent();
-        try {
-            if (isCvs) {
-                Formats.registerJenaCSV();
-            }
-            return manager.loadOntologyFromOntologyDocument(source);
-        } finally {
-            Formats.unregisterJenaCSV();
-        }
+        return manager.loadOntologyFromOntologyDocument(source);
     }
 
     /**
@@ -209,7 +194,6 @@ public class Managers {
     public static List<IRIMap> createMappings(Path dir, OntFormat format) throws IOException {
         return loadDirectory(dir, format, Managers::createSoftManager, true);
     }
-
 
     /**
      * Loads a directory to {@link IRIMap} object.

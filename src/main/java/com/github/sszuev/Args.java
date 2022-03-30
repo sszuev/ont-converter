@@ -33,7 +33,8 @@ public class Args {
     private final OntFormat outFormat, inFormat;
     private final OntModelConfig.StdMode personality;
     private final boolean spin, force, refine, verbose, webAccess;
-    private boolean outDir, inDir;
+    private final boolean outDir;
+    private final boolean inDir;
 
     private Args(Path input,
                  Path output,
@@ -85,7 +86,7 @@ public class Args {
             out = out.getParent().toRealPath().resolve(out.getFileName());
         }
 
-        if (Files.isDirectory(in) && Files.walk(in).filter(f -> Files.isRegularFile(f)).count() > 1) {
+        if (Files.isDirectory(in) && Files.walk(in).filter(Files::isRegularFile).count() > 1) {
             // out should be directory
             if (Files.exists(out)) {
                 if (!Files.isDirectory(out)) {
@@ -143,15 +144,10 @@ public class Args {
         if (usage) {
             sb.append("Full list of supported formats:").append("\n");
             sb.append(" ").append(formatHeader()).append("\n");
-            try {
-                Formats.registerJenaCSV();
                 OntFormat.formats()
                         .filter(f -> f.isReadSupported() || f.isWriteSupported())
                         .map(Args::formatLine)
                         .forEach(x -> sb.append(" ").append(x).append("\n"));
-            } finally {
-                Formats.unregisterJenaCSV();
-            }
         }
         return sb.toString();
     }
@@ -160,7 +156,7 @@ public class Args {
         return StringUtils.rightPad(f.name(), NAME_COL_LENGTH) +
                 StringUtils.rightPad(f.isJena() ? "Apache Jena" : "OWL-API", PROVIDER_COL_LENGTH) +
                 StringUtils.rightPad(f.isReadSupported() + "/" + f.isWriteSupported(), READ_WRITE_COL_LENGTH) +
-                Formats.aliases(f).stream().collect(Collectors.joining(", "));
+                String.join(", ", Formats.aliases(f));
 
     }
 

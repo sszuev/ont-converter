@@ -3,8 +3,6 @@ package com.github.sszuev.utils;
 import org.apache.jena.lang.csv.ReaderRIOTFactoryCSV;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFParserRegistry;
-import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
-import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntology;
 import ru.avicomp.ontapi.OntFormat;
@@ -52,31 +50,10 @@ public class Formats {
     /**
      * Registers {@link Lang#CSV} in jena system.
      * This operation enables {@link OntFormat#CSV} for reading operations.
-     *
-     * @see #unregisterJenaCSV()
      */
     public static void registerJenaCSV() {
         RDFParserRegistry.removeRegistration(Lang.CSV);
         RDFParserRegistry.registerLangTriples(Lang.CSV, new ReaderRIOTFactoryCSV());
-    }
-
-    /**
-     * unregisters csv format
-     *
-     * @see #registerJenaCSV()
-     */
-    public static void unregisterJenaCSV() {
-        RDFParserRegistry.removeRegistration(Lang.CSV);
-    }
-
-    /**
-     * Determines is the specified resource can be treated as csv-file.
-     *
-     * @param iri {@link IRI}
-     * @return true if the resource has extension '.csv'
-     */
-    public static boolean isCSV(IRI iri) {
-        return IRIs.hasExtension(OntFormat.CSV.getExt(), iri);
     }
 
     /**
@@ -89,9 +66,5 @@ public class Formats {
         OWLDocumentFormat f = o.getFormat();
         if (f == null) return Optional.empty();
         return Optional.ofNullable(OntFormat.get(f));
-    }
-
-    public static Optional<OntFormat> format(OWLOntologyDocumentSource source) {
-        return source.getFormat().map(OntFormat::get);
     }
 }

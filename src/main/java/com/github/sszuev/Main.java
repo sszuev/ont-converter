@@ -1,6 +1,7 @@
 package com.github.sszuev;
 
 import com.github.sszuev.ontapi.IRIMap;
+import com.github.sszuev.utils.Formats;
 import com.github.sszuev.utils.IRIs;
 import com.github.sszuev.utils.Managers;
 import org.apache.log4j.Level;
@@ -33,6 +34,7 @@ public class Main {
 
     public static void main(String... inputs) throws Exception {
         forceDisableExternalLogging();
+        Formats.registerJenaCSV();
         Args args = null;
         try {
             args = Args.parse(inputs);
@@ -183,7 +185,7 @@ public class Main {
         java.util.logging.LogManager.getLogManager().reset();
         try {
             // java9:
-            Class clazz = Class.forName("jdk.internal.module.IllegalAccessLogger");
+            Class<?> clazz = Class.forName("jdk.internal.module.IllegalAccessLogger");
             Field logger = clazz.getDeclaredField("logger");
             Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
             theUnsafe.setAccessible(true);
