@@ -14,7 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skipTests>true</skipTests>
         <version.ontapi>1.4.2</version.ontapi>
-        <version.jena>3.8.0</version.jena>
+        <version.jena>3.9.0</version.jena>
         <version.owlapi>5.1.7</version.owlapi>
         <version.slf4j>1.7.36</version.slf4j>
     </properties>
@@ -37,6 +37,17 @@
             <groupId>ru.avicomp</groupId>
             <artifactId>ontapi</artifactId>
             <version>${version.ontapi}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.jena</groupId>
+                    <artifactId>jena-arq</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-arq</artifactId>
+            <version>${version.jena}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.jena</groupId>
