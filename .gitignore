@@ -9,3 +9,7 @@ target
 .idea/
 /out*
 /logs/
+/gradlew.bat
+/gradlew
+/build/
+/gradle/
