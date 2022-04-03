@@ -5,10 +5,12 @@ import com.github.owlcs.ontapi.jena.impl.conf.OntModelConfig
 import java.nio.file.Path
 
 data class Args(
-    val inputFile: Path,
-    val inputFormat: OntFormat?,
-    val outputFile: Path,
-    val outputFormat: OntFormat,
+    val sourceFile: Path,
+    val sourceFormat: OntFormat?,
+    val sourceIsDirectory: Boolean,
+    val targetFile: Path,
+    val targetFormat: OntFormat,
+    val targetIsDirectory: Boolean,
     val punnings: OntModelConfig.StdMode,
     val spin: Boolean,
     val refine: Boolean,
@@ -20,10 +22,10 @@ data class Args(
     fun printString(): String {
         return """
             |Arguments:
-            |    inputFile=$inputFile
-            |    inputFormat=$inputFormat 
-            |    outputFile=$outputFile 
-            |    outputFormat=$outputFormat
+            |    input${(if (sourceIsDirectory) "Dir=" else "File=") + sourceFile}
+            |    inputFormat=$sourceFormat
+            |    output${(if (targetIsDirectory) "Dir=" else "File=") + targetFile}
+            |    outputFormat=$targetFormat
             |    punnings=$punnings
             |    spin=$spin
             |    refine=$refine

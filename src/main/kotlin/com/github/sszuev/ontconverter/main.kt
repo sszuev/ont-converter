@@ -12,6 +12,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
+import kotlin.io.path.isDirectory
 
 fun main(argsArray: Array<String>) {
     val args = parse(argsArray)
@@ -27,7 +28,7 @@ private fun parse(args: Array<String>): Args {
             The file path or not-empty directory to load ontology/ontologies.
             """.trimIndent()
     ).required()
-    val inputFormat by parser.option(
+    val sourceFormat by parser.option(
         ArgType.Choice(supportedReadFormats(), { e -> OntFormat.valueOf(e) }, { it.name }),
         shortName = "if", fullName = "input-format",
         description = """
@@ -42,7 +43,7 @@ private fun parse(args: Array<String>): Args {
             If the --input is a file then this parameter must also be a file.
             """.trimIndent()
     ).required()
-    val outputFormat by parser.option(
+    val targetFormat by parser.option(
         ArgType.Choice(supportedWriteFormats(), { OntFormat.valueOf(it.uppercase(locale)) }, { it.name }),
         shortName = "of", fullName = "output-format",
         description = """
@@ -99,32 +100,43 @@ private fun parse(args: Array<String>): Args {
 
     parser.parse(args)
 
-    val input = Paths.get(inputStringPath).toRealPath()
-    val output = parseOutput(outputStringPath, input)
+    val source = parseInput(inputStringPath)
+    val target = parseOutput(outputStringPath, source)
 
-    return Args(input, inputFormat, output, outputFormat, punnings, spin, refine, web, force, verbose)
+    return Args(
+        source, sourceFormat, source.isDirectory(),
+        target, targetFormat, target.isDirectory(),
+        punnings, spin, refine, web, force, verbose
+    )
 }
 
-private fun parseOutput(outputStringPath: String, input: Path): Path {
-    var out: Path = Paths.get(outputStringPath)
-    if (out.parent != null) {
-        require(Files.exists(out.parent)) { "Directory ${out.parent} does not exist." }
-        out = out.parent.toRealPath().resolve(out.fileName)
+private fun parseInput(inputStringPath: String): Path {
+    val source = Paths.get(inputStringPath).toRealPath()
+    if (source.isDirectory() && Files.walk(source).filter { Files.isRegularFile(it) }.findFirst().isEmpty) {
+        throw IllegalArgumentException("Directory $source contains no files.")
     }
-    if (Files.isDirectory(input) &&
-        Files.walk(input).filter { Files.isRegularFile(it) }.skip(1).findFirst().isPresent
-    ) {
-        // if input is a directory with more than one file, then out should be a directory
-        if (Files.exists(out)) {
-            out = if (!Files.isDirectory(out)) {
-                throw IllegalArgumentException("Output parameter is not a directory path: $out")
-            } else {
-                out.toRealPath()
-            }
+    return source
+}
+
+private fun parseOutput(outputStringPath: String, source: Path): Path {
+    var target: Path = Paths.get(outputStringPath)
+    if (target.parent != null) {
+        require(Files.exists(target.parent)) { "Directory ${target.parent} does not exist." }
+        target = target.parent.toRealPath().resolve(target.fileName)
+    }
+    if (!source.isDirectory()) {
+        return target
+    }
+    // if the input is a directory, then the output must also be a directory
+    if (Files.exists(target)) {
+        target = if (!Files.isDirectory(target)) {
+            throw IllegalArgumentException("Output parameter is not a directory path: $target")
         } else {
-            Files.createDirectory(out)
+            target.toRealPath()
         }
+    } else {
+        Files.createDirectory(target)
     }
-    return out
+    return target
 }
 
