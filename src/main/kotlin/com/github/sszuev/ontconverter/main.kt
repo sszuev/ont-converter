@@ -8,15 +8,22 @@ import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
 import kotlinx.cli.default
 import kotlinx.cli.required
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 import kotlin.io.path.isDirectory
 
+private val logger: Logger = LoggerFactory.getLogger("main.kt")
+
 fun main(argsArray: Array<String>) {
     val args = parse(argsArray)
-    println(args.printString())
+    // configure logger:
+    org.apache.log4j.Logger.getRootLogger().level = if (args.verbose)
+        org.apache.log4j.Level.DEBUG else org.apache.log4j.Level.FATAL
+    logger.debug(args.printString())
 }
 
 private fun parse(args: Array<String>): Args {

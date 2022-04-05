@@ -17,10 +17,13 @@ dependencies {
     val kotlincliVersion = "0.3.4"
     val ontapiVersion = "3.0.0"
     val owlapiVersion = "5.1.20"
+    val slf4jVersion = "1.7.36";
 
     implementation("org.jetbrains.kotlinx:kotlinx-cli:$kotlincliVersion")
     implementation("com.github.owlcs:ontapi:$ontapiVersion")
     implementation("net.sourceforge.owlapi:owlapi-parsers:$owlapiVersion")
+    implementation("org.slf4j:slf4j-api:$slf4jVersion")
+    implementation("org.slf4j:slf4j-log4j12:$slf4jVersion")
 
     testImplementation(kotlin("test"))
 }
