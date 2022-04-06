@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.semanticweb.owlapi.model.IRI
 import org.semanticweb.owlapi.model.OWLOntologyID
 import java.nio.file.FileSystemNotFoundException
+import java.nio.file.Paths
 
 class OntologyMapTest {
 
@@ -63,7 +64,7 @@ class OntologyMapTest {
         val ont = OntologyMapTest::class.java.getResourceAsStream("/pizza.ttl").use {
             OntManagers.createManager().loadOntologyFromOntologyDocument(it!!)
         }
-        val doc = IRI.create("file:/x/x/x.x")
+        val doc = IRI.create(Paths.get("/x/x/x.x").toFile())
         val map = OntologyMap()
         map.put(doc, ont)
         val list = map.sources().map { it.documentIRI }.toList()

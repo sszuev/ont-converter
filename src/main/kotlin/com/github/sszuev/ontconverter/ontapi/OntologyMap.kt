@@ -1,8 +1,10 @@
 package com.github.sszuev.ontconverter.ontapi
 
 import com.github.owlcs.ontapi.OntFormat
+import com.github.owlcs.ontapi.OntologyManager
+import com.github.sszuev.ontconverter.utils.byImportsDeclarationCount
 import com.github.sszuev.ontconverter.utils.createSource
-import com.github.sszuev.ontconverter.utils.toName
+import com.github.sszuev.ontconverter.utils.getNameIRI
 import org.semanticweb.owlapi.io.OWLOntologyDocumentSource
 import org.semanticweb.owlapi.model.*
 
@@ -12,7 +14,7 @@ import org.semanticweb.owlapi.model.*
  */
 class OntologyMap : OWLOntologyIRIMapper {
     private val map: MutableMap<IRI, OWLOntology> = LinkedHashMap()
-    private var manager: OWLOntologyManager? = null
+    private var manager: OntologyManager? = null
 
     /**
      * Puts document-ontology pair into this map.
@@ -22,7 +24,7 @@ class OntologyMap : OWLOntologyIRIMapper {
         require(!map.containsKey(document)) { "The map already contains document $document." }
         val m = ontology.owlOntologyManager ?: throw IllegalArgumentException("The ontology has no manager.")
         if (this.manager == null) {
-            this.manager = m
+            this.manager = m as OntologyManager
         } else if (this.manager != m) {
             throw IllegalArgumentException("Wrong manager inside ${ontology.ontologyID}. Source=${document}")
         }
@@ -48,9 +50,9 @@ class OntologyMap : OWLOntologyIRIMapper {
     }
 
     /**
-     * Returns [OWLOntologyManager] or `null` in case the mapper is empty
+     * Returns [OntologyManager] or `null` in case the mapper is empty
      */
-    fun getManager(): OWLOntologyManager? {
+    fun getManager(): OntologyManager? {
         return manager
     }
 
@@ -67,8 +69,8 @@ class OntologyMap : OWLOntologyIRIMapper {
     @Throws(NullPointerException::class)
     fun sources(): Sequence<OWLOntologyDocumentSource> {
         return map.entries.asSequence()
-            .sortedWith(java.util.Map.Entry.comparingByValue(byImportsCount))
-            .map { e -> createSource(e.key, format(e.value)!!) }
+            .sortedWith(java.util.Map.Entry.comparingByValue(byImportsDeclarationCount))
+            .map { e -> createSource(e.key, getFormatOrNull(e.value)!!) }
     }
 
     /**
@@ -86,16 +88,13 @@ class OntologyMap : OWLOntologyIRIMapper {
 
     override fun toString(): String {
         return map.entries.asSequence()
-            .map { (key, value) -> "$key => ${toName(value)} [${format(value)}]" }
+            .map { (key, value) -> "$key => ${getNameIRI(value)} [${getFormatOrNull(value)}]" }
             .joinToString("\n")
     }
 
-    private companion object {
-        private val byImportsCount: Comparator<OWLOntology> =
-            Comparator.comparingLong { it.importsDeclarations().count() }
-
-        private fun format(o: OWLOntology): OntFormat? {
-            val f = o.format
+    companion object {
+        private fun getFormatOrNull(ont: OWLOntology): OntFormat? {
+            val f = ont.format
             return if (f == null) null else OntFormat.get(f)
         }
     }

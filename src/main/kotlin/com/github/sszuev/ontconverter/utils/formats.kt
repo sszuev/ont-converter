@@ -10,3 +10,4 @@ fun supportedReadFormats(): List<OntFormat> {
 fun supportedWriteFormats(): List<OntFormat> {
     return OntFormat.formats().filter(OntFormat::isWriteSupported).toList()
 }
+
