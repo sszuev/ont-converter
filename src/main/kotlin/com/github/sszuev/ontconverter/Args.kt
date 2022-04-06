@@ -2,6 +2,7 @@ package com.github.sszuev.ontconverter
 
 import com.github.owlcs.ontapi.OntFormat
 import com.github.owlcs.ontapi.jena.impl.conf.OntModelConfig
+import com.github.owlcs.ontapi.jena.impl.conf.OntPersonality
 import java.nio.file.Path
 
 data class Args(
@@ -11,13 +12,20 @@ data class Args(
     val targetFile: Path,
     val targetFormat: OntFormat,
     val targetIsDirectory: Boolean,
-    val punnings: OntModelConfig.StdMode,
-    val spin: Boolean,
-    val refine: Boolean,
-    val web: Boolean,
-    val force: Boolean,
-    val verbose: Boolean
+    val punnings: OntModelConfig.StdMode = OntModelConfig.StdMode.LAX,
+    val spin: Boolean = false,
+    val refine: Boolean = false,
+    val web: Boolean = false,
+    val force: Boolean = false,
+    val verbose: Boolean = false
 ) {
+
+    val personality: OntPersonality
+        get() = when (punnings) {
+            OntModelConfig.StdMode.LAX -> OntModelConfig.ONT_PERSONALITY_LAX
+            OntModelConfig.StdMode.MEDIUM -> OntModelConfig.ONT_PERSONALITY_MEDIUM
+            OntModelConfig.StdMode.STRICT -> OntModelConfig.ONT_PERSONALITY_STRICT
+        }
 
     fun printString(): String {
         return """

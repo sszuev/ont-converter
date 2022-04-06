@@ -29,6 +29,8 @@ class ArgsTest {
                     "    force=true\n" +
                     "    verbose=false", args1.printString()
         )
+        Assertions.assertEquals(OntModelConfig.ONT_PERSONALITY_STRICT, args1.personality)
+
         val args2 = Args(
             sourceFile = Path.of("C"), sourceFormat = OntFormat.KRSS, sourceIsDirectory = false,
             targetFile = Path.of("D"), targetFormat = OntFormat.RDF_XML, targetIsDirectory = true,
@@ -48,5 +50,6 @@ class ArgsTest {
                     "    force=false\n" +
                     "    verbose=true", args2.printString()
         )
+        Assertions.assertEquals(OntModelConfig.ONT_PERSONALITY_MEDIUM, args2.personality)
     }
 }

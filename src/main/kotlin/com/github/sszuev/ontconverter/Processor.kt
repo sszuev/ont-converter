@@ -2,9 +2,9 @@ package com.github.sszuev.ontconverter
 
 import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntologyManager
-import com.github.sszuev.ontconverter.utils.copyManager
-import com.github.sszuev.ontconverter.utils.getNameIRI
+import com.github.sszuev.ontconverter.utils.*
 import org.semanticweb.owlapi.formats.PrefixDocumentFormat
+import org.semanticweb.owlapi.io.OWLOntologyDocumentSource
 import org.semanticweb.owlapi.model.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -18,6 +18,40 @@ private val logger: Logger = LoggerFactory.getLogger(Processor::class.java)
  * A core of tool: a facility to process transformation.
  */
 class Processor(private val args: Args) {
+
+    fun run() {
+        logger.info("Start...")
+        if (args.sourceIsDirectory) {
+            TODO("Directory ")
+        } else {
+            handleSingleFile()
+        }
+        logger.info("Done.")
+    }
+
+    private fun handleSingleFile() {
+        val m = createManager(args.personality, force = args.force, spin = args.spin)
+        val s = createSource(IRI.create(args.sourceFile.toUri()), args.sourceFormat)
+        val id = load(m, s) ?: return
+        save(m, mapOf(s.documentIRI to id))
+    }
+
+    /**
+     * Loads single ontology.
+     */
+    @Throws(OntApiException::class)
+    internal fun load(manager: OntologyManager, source: OWLOntologyDocumentSource): OWLOntologyID? {
+        return try {
+            manager.loadOntologyFromOntologyDocument(source).ontologyID
+        } catch (ex: OWLOntologyCreationException) {
+            val iri: IRI = getSourceIRI(source)
+            if (args.force) {
+                logger.error("Unable to load ontology document $iri")
+                return null
+            }
+            throw OntApiException("Can't proceed the ontology document $iri", ex)
+        }
+    }
 
     /**
      * Saves ontologies to the target.

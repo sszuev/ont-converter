@@ -1,16 +1,19 @@
 package com.github.sszuev.ontconverter
 
+import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntFormat
 import com.github.owlcs.ontapi.OntManagers
-import com.github.owlcs.ontapi.jena.impl.conf.OntModelConfig
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.semanticweb.owlapi.io.IRIDocumentSource
 import org.semanticweb.owlapi.model.IRI
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import kotlin.io.path.exists
 
 private val logger: Logger = LoggerFactory.getLogger(ProcessorTest::class.java)
@@ -25,8 +28,6 @@ class ProcessorTest {
         val args = Args(
             sourceFile = src, sourceFormat = null, sourceIsDirectory = false,
             targetFile = dir, targetFormat = OntFormat.RDF_XML, targetIsDirectory = true,
-            punnings = OntModelConfig.StdMode.STRICT,
-            spin = false, refine = true, web = false, force = true, verbose = false
         )
         logger.debug(args.toString())
         val manager = OntManagers.createManager()
@@ -35,6 +36,41 @@ class ProcessorTest {
         val p = Processor(args)
         p.save(manager, mapOf(IRI.create(src.toUri()) to ont.ontologyID))
         Assertions.assertTrue(dst.exists())
+    }
+
+    @Test
+    fun `test load single ontology fail`() {
+        val args = Args(
+            sourceFile = Path.of("A"), sourceFormat = null, sourceIsDirectory = false,
+            targetFile = Path.of("B"), targetFormat = OntFormat.RDF_XML, targetIsDirectory = true,
+            force = true
+        )
+        logger.debug(args.toString())
+        val m = OntManagers.createManager()
+        val s = IRIDocumentSource(IRI.create("iri"))
+        Assertions.assertNull(Processor(args).load(m, s))
+        Assertions.assertThrows(OntApiException::class.java) { Processor(args.copy(force = false)).load(m, s) }
+    }
+
+    @Test
+    fun `test process single file`(@TempDir dir: Path) {
+        val targetFile = dir.resolve("dst.owl")
+        Assumptions.assumeFalse(targetFile.exists())
+        val sourceFile = Paths.get(ProcessorTest::class.java.getResource("/pizza.ttl")?.toURI() ?: Assertions.fail())
+        val args = Args(
+            sourceFile = sourceFile, sourceFormat = OntFormat.TURTLE, sourceIsDirectory = false,
+            targetFile = targetFile, targetFormat = OntFormat.OWL_XML, targetIsDirectory = false,
+        )
+        logger.debug(args.toString())
+
+        Processor(args).run()
+        Assertions.assertTrue(targetFile.exists())
+
+        var line: String
+        Files.newBufferedReader(targetFile).lines().use { s ->
+            line = s.findFirst().orElseThrow { AssertionError() }
+        }
+        Assertions.assertEquals("<?xml version=\"1.0\"?>", line)
     }
 }
 

@@ -15,3 +15,12 @@ fun createSource(document: IRI, format: OntFormat?): OWLOntologyDocumentSource {
         IRIDocumentSource(document)
     } else FileDocumentSource(Paths.get(document.toURI()).toFile(), format.createOwlFormat())
 }
+
+/**
+ * Retrieves an iri from document-source
+ */
+fun getSourceIRI(source: OWLOntologyDocumentSource): IRI {
+    return if (source is FileDocumentSource) {
+        IRI.create(Paths.get(source.getDocumentIRI().toURI()).toUri())
+    } else source.documentIRI
+}
