@@ -1,6 +1,7 @@
 package com.github.sszuev.ontconverter.ontapi
 
 import com.github.owlcs.ontapi.OntFormat
+import com.github.owlcs.ontapi.Ontology
 import com.github.owlcs.ontapi.OntologyManager
 import com.github.sszuev.ontconverter.utils.byImportsDeclarationCount
 import com.github.sszuev.ontconverter.utils.createSource
@@ -20,11 +21,11 @@ class OntologyMap : OWLOntologyIRIMapper {
      * Puts document-ontology pair into this map.
      */
     @Throws(IllegalArgumentException::class)
-    fun put(document: IRI, ontology: OWLOntology): OntologyMap {
+    fun put(document: IRI, ontology: Ontology): OntologyMap {
         require(!map.containsKey(document)) { "The map already contains document $document." }
         val m = ontology.owlOntologyManager ?: throw IllegalArgumentException("The ontology has no manager.")
         if (this.manager == null) {
-            this.manager = m as OntologyManager
+            this.manager = m
         } else if (this.manager != m) {
             throw IllegalArgumentException("Wrong manager inside ${ontology.ontologyID}. Source=${document}")
         }

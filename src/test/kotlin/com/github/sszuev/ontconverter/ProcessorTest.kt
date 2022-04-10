@@ -1,13 +1,11 @@
 package com.github.sszuev.ontconverter
 
-import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntFormat
 import com.github.owlcs.ontapi.OntManagers
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.semanticweb.owlapi.io.IRIDocumentSource
 import org.semanticweb.owlapi.model.IRI
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -36,20 +34,6 @@ class ProcessorTest {
         val p = Processor(args)
         p.save(manager, mapOf(IRI.create(src.toUri()) to ont.ontologyID))
         Assertions.assertTrue(dst.exists())
-    }
-
-    @Test
-    fun `test load single ontology fail`() {
-        val args = Args(
-            sourceFile = Path.of("A"), sourceFormat = null, sourceIsDirectory = false,
-            targetFile = Path.of("B"), targetFormat = OntFormat.RDF_XML, targetIsDirectory = true,
-            force = true
-        )
-        logger.debug(args.toString())
-        val m = OntManagers.createManager()
-        val s = IRIDocumentSource(IRI.create("iri"))
-        Assertions.assertNull(Processor(args).load(m, s))
-        Assertions.assertThrows(OntApiException::class.java) { Processor(args.copy(force = false)).load(m, s) }
     }
 
     @Test
