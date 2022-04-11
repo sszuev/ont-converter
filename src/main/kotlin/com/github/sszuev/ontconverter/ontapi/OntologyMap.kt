@@ -15,23 +15,11 @@ import org.semanticweb.owlapi.model.*
  * Contains a collection of [ontologies][OWLOntology] in disassembled form:
  * [id][OWLOntologyID] + [graph][Graph] + [format][OntFormat].
  */
-class OntologyMap : OWLOntologyIRIMapper {
-    private val ids: MutableMap<IRI, OWLOntologyID> = LinkedHashMap()
-    private val graphs: MutableMap<IRI, Graph> = HashMap()
-    private val formats: MutableMap<IRI, OntFormat> = HashMap()
-
-    /**
-     * Puts document-ontology pair into this map.
-     */
-    @Throws(IllegalArgumentException::class)
-    fun put(document: IRI, ontology: Ontology): OntologyMap {
-        require(!ids.containsKey(document)) { "The map already contains document $document." }
-        ids[document] = ontology.ontologyID
-        graphs[document] = ontology.asGraphModel().baseGraph
-        val format = ontology.format
-        if (format != null) formats[document] = OntFormat.get(format)
-        return this
-    }
+data class OntologyMap(
+    val ids: Map<IRI, OWLOntologyID>,
+    val graphs: Map<IRI, Graph>,
+    val formats: Map<IRI, OntFormat>
+) : OWLOntologyIRIMapper {
 
     /**
      * To use inside [OWLOntologyManager]
@@ -85,5 +73,34 @@ class OntologyMap : OWLOntologyIRIMapper {
         return ids.entries.asSequence()
             .map { "<${it.key}> => ${ontologyName(it.value)} [${formats[it.key]}]" }
             .joinToString("\n")
+    }
+
+    companion object {
+        /**
+         * Creates ontology mapping object.
+         * @param [ontologies] ([source][IRI] - [Ontology]) pairs
+         * @return [OntologyMap]
+         */
+        fun of(vararg ontologies: Pair<IRI, Ontology>): OntologyMap {
+            return of(ontologies.toMap())
+        }
+
+        /**
+         * Creates ontology mapping object.
+         * @param [ontologies] a [Map] with ([source][IRI] - [Ontology]) pairs
+         * @return [OntologyMap]
+         */
+        fun of(ontologies: Map<IRI, Ontology>): OntologyMap {
+            val ids: MutableMap<IRI, OWLOntologyID> = LinkedHashMap()
+            val graphs: MutableMap<IRI, Graph> = HashMap()
+            val formats: MutableMap<IRI, OntFormat> = HashMap()
+            ontologies.forEach {
+                ids[it.key] = it.value.ontologyID
+                graphs[it.key] = it.value.asGraphModel().baseGraph
+                val format = it.value.format
+                if (format != null) formats[it.key] = OntFormat.get(format)
+            }
+            return OntologyMap(ids, graphs, formats)
+        }
     }
 }

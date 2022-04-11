@@ -1,7 +1,6 @@
 package com.github.sszuev.ontconverter.ontapi
 
 import com.github.owlcs.ontapi.OntGraphDocumentSource
-import com.github.owlcs.ontapi.OntManagers
 import com.github.sszuev.ontconverter.utils.createDefaultManager
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -13,22 +12,14 @@ class OntologyMapTest {
 
     @Test
     fun `test put ok`() {
-        val map = OntologyMap()
-        Assertions.assertTrue(map.isEmpty)
-        Assertions.assertEquals(0, map.toIdsMap().size)
-
         val man = createDefaultManager()
-
         val ontA = man.createOntology(IRI.create("ns:ont-a"))
-        map.put(IRI.create("h:A"), ontA)
-        Assertions.assertFalse(map.isEmpty)
-        Assertions.assertEquals(1, map.toIdsMap().size)
-        Assertions.assertEquals(ontA.ontologyID, map.toIdsMap()[IRI.create("h:A")])
-
         val ontB = man.createOntology(IRI.create("ns:ont-b"))
-        map.put(IRI.create("h:B"), ontB)
+
+        val map = OntologyMap.of(IRI.create("h:A") to ontA, IRI.create("h:B") to ontB)
         Assertions.assertFalse(map.isEmpty)
         Assertions.assertEquals(2, map.toIdsMap().size)
+
         Assertions.assertEquals(ontA.ontologyID, map.toIdsMap()[IRI.create("h:A")])
         Assertions.assertEquals(ontB.ontologyID, map.toIdsMap()[IRI.create("h:B")])
 
@@ -45,23 +36,12 @@ class OntologyMapTest {
     }
 
     @Test
-    fun `test put fail`() {
-        val map = OntologyMap()
-        map.put(IRI.create("h:A"), createDefaultManager().createOntology())
-
-        Assertions.assertThrows(IllegalArgumentException::class.java) {
-            map.put(IRI.create("h:A"), OntManagers.createManager().createOntology())
-        }
-    }
-
-    @Test
     fun `test load file`() {
         val ont = OntologyMapTest::class.java.getResourceAsStream("/pizza.ttl").use {
             createDefaultManager().loadOntologyFromOntologyDocument(it!!)
         }
         val doc = IRI.create(Paths.get("/x/x/x.x").toFile())
-        val map = OntologyMap()
-        map.put(doc, ont)
+        val map = OntologyMap.of(doc to ont)
         val documents = map.sources().map { it.documentIRI }.toList()
         Assertions.assertEquals(listOf(doc), documents)
         val graphs = map.sources().map { it as OntGraphDocumentSource }.map { it.graph }.toList()
