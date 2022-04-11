@@ -1,16 +1,13 @@
 package com.github.sszuev.ontconverter.utils
 
-import org.semanticweb.owlapi.model.IRI
+import com.github.owlcs.ontapi.jena.utils.Graphs
+import org.apache.jena.graph.Graph
 import org.semanticweb.owlapi.model.OWLOntology
 import org.semanticweb.owlapi.model.OWLOntologyID
 
-val byImportsDeclarationCount: Comparator<OWLOntology> = Comparator.comparingLong { it.importsDeclarations().count() }
+val byImportsDeclarationCount: Comparator<Graph> = Comparator.comparingInt { Graphs.getImports(it).size }
 val byImportsCount: Comparator<OWLOntology> = Comparator.comparingLong { it.imports().count() }
 
-fun getNameIRI(ont: OWLOntology): IRI {
-    return getNameIRI(ont.ontologyID) { ont.owlOntologyManager.getOntologyDocumentIRI(ont) }
-}
-
-fun getNameIRI(id: OWLOntologyID, orElse: () -> IRI): IRI {
-    return id.ontologyIRI.orElseGet(orElse)
+fun ontologyName(id: OWLOntologyID): String {
+    return id.ontologyIRI.map { "<${it.iriString}>" }.orElse("<anonymous>")
 }

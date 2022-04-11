@@ -5,7 +5,6 @@ import com.github.owlcs.ontapi.OntManagers
 import com.github.owlcs.ontapi.OntologyManager
 import com.github.owlcs.ontapi.config.OntConfig
 import com.github.owlcs.ontapi.jena.impl.conf.OntPersonality
-import org.semanticweb.owlapi.model.IRI
 import org.semanticweb.owlapi.model.MissingImportHandlingStrategy
 import org.semanticweb.owlapi.model.parameters.OntologyCopy
 import org.slf4j.Logger
@@ -72,7 +71,7 @@ fun copyOntologies(source: OntologyManager, target: OntologyManager, ignoreExcep
     source.ontologies()
         .sorted(byImportsCount)
         .forEach {
-            val name: IRI = getNameIRI(it)
+            val name: String = ontologyName(it.ontologyID)
             logger.trace("Copy ontology $name")
             try {
                 target.copyOntology(it, OntologyCopy.DEEP)

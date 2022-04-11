@@ -2,7 +2,10 @@ package com.github.sszuev.ontconverter
 
 import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntologyManager
-import com.github.sszuev.ontconverter.utils.*
+import com.github.sszuev.ontconverter.utils.createCopyManager
+import com.github.sszuev.ontconverter.utils.createManager
+import com.github.sszuev.ontconverter.utils.createSource
+import com.github.sszuev.ontconverter.utils.loadSource
 import org.semanticweb.owlapi.formats.PrefixDocumentFormat
 import org.semanticweb.owlapi.model.*
 import org.slf4j.Logger
@@ -62,7 +65,7 @@ class Processor(private val args: Args) {
         for (src in map.keys) {
             val id = map[src]!!
             val file: IRI = toResultFile(src)
-            val name: IRI = getNameIRI(id) { src }
+            val name: String = id.ontologyIRI.map { "<${it.iriString}>" }.orElse("<anonymous>")
             val ont: OWLOntology =
                 requireNotNull(man.getOntology(id)) { "The ontology not found. id=$name, file=$src." }
             logger.info("Save ontology $name as ${args.targetFormat} to ${file}.")
