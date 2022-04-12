@@ -20,7 +20,7 @@ fun <X> findIndependentComponents(graph: Map<X, Collection<X>>): List<Set<X>> {
             res.add(toFlatSet(map))
             break
         }
-        val vertexes: MutableSet<X> = HashSet()
+        val vertexes: MutableSet<X> = LinkedHashSet()
         dfs(root, graph, HashSet()) { x: X ->
             vertexes.add(x)
             map.remove(x)
@@ -70,7 +70,7 @@ private fun <X> firstRootOrNull(graph: Map<X, Collection<X>>): X? {
  * [Map] of [Collection] -> [Set]
  */
 private fun <X> toFlatSet(graph: Map<X, Collection<X>>): Set<X> {
-    val res: MutableSet<X> = HashSet()
+    val res: MutableSet<X> = LinkedHashSet()
     graph.forEach { (k: X, values: Collection<X>) ->
         res.add(k)
         res.addAll(values)

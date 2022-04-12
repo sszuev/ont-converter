@@ -17,22 +17,23 @@ class OntologyMapTest {
         val ontB = man.createOntology(IRI.create("ns:ont-b"))
 
         val map = OntologyMap.of(IRI.create("h:A") to ontA, IRI.create("h:B") to ontB)
-        Assertions.assertFalse(map.isEmpty)
-        Assertions.assertEquals(2, map.toIdsMap().size)
+        Assertions.assertEquals(2, map.ids.size)
+        Assertions.assertEquals(2, map.graphs.size)
+        Assertions.assertEquals(2, map.formats.size)
 
-        Assertions.assertEquals(ontA.ontologyID, map.toIdsMap()[IRI.create("h:A")])
-        Assertions.assertEquals(ontB.ontologyID, map.toIdsMap()[IRI.create("h:B")])
+        Assertions.assertEquals(ontA.ontologyID, map.ids[IRI.create("h:A")])
+        Assertions.assertEquals(ontB.ontologyID, map.ids[IRI.create("h:B")])
 
-        val docs = map.documents().toList()
+        val docs = map.ids.keys.toList()
         Assertions.assertEquals(listOf(IRI.create("h:A"), IRI.create("h:B")), docs)
 
-        Assertions.assertEquals(OWLOntologyID(IRI.create("ns:ont-a")), map.geOntologyID(IRI.create("h:A")))
-        Assertions.assertEquals(OWLOntologyID(IRI.create("ns:ont-b")), map.geOntologyID(IRI.create("h:B")))
+        Assertions.assertEquals(OWLOntologyID(IRI.create("ns:ont-a")), map.ids[IRI.create("h:A")])
+        Assertions.assertEquals(OWLOntologyID(IRI.create("ns:ont-b")), map.ids[IRI.create("h:B")])
 
         Assertions.assertEquals(IRI.create("h:A"), map.getDocumentIRI(IRI.create("ns:ont-a")))
         Assertions.assertEquals(IRI.create("h:B"), map.getDocumentIRI(IRI.create("ns:ont-b")))
 
-        Assertions.assertEquals("<h:A> => <ns:ont-a> [TURTLE]\n<h:B> => <ns:ont-b> [TURTLE]", map.toString())
+        Assertions.assertEquals("{<h:A> => <ns:ont-a> [TURTLE], <h:B> => <ns:ont-b> [TURTLE]}", map.toString())
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntManagers
 import com.github.owlcs.ontapi.OntologyManager
 import com.github.owlcs.ontapi.config.OntConfig
+import com.github.owlcs.ontapi.jena.impl.conf.OntModelConfig
 import com.github.owlcs.ontapi.jena.impl.conf.OntPersonality
 import org.semanticweb.owlapi.model.MissingImportHandlingStrategy
 import org.semanticweb.owlapi.model.parameters.OntologyCopy
@@ -38,6 +39,27 @@ fun createManager(personality: OntPersonality?, force: Boolean, spin: Boolean): 
         config.missingImportHandlingStrategy = MissingImportHandlingStrategy.SILENT
         config.isIgnoreAxiomsReadErrors = true
     }
+    return manager
+}
+
+/**
+ * Creates a soft manager suitable for traversing through directory.
+ * It has the following settings: missing imports are ignored, punnings are allowed,
+ * any errors while collecting axioms are ignored,
+ * No transformations are performed.
+ * If the document being processing is a valid RDF and the serialization format is supported by jena
+ * then the graph is loaded as is and may contain any non-OWL constructions.
+ * Otherwise, OWLAPI mechanisms are used and the graph will only contain a valid OWL axioms (unless the load fails).
+ *
+ * @return [OntologyManager]
+ */
+fun createSoftManager(): OntologyManager {
+    val manager: OntologyManager = createDefaultManager()
+    manager.ontologyConfigurator
+        .setMissingImportHandlingStrategy(MissingImportHandlingStrategy.SILENT)
+        .setPerformTransformation(false)
+        .setSupportedSchemes(listOf(OntConfig.DefaultScheme.FILE))
+        .setPersonality(OntModelConfig.ONT_PERSONALITY_LAX).isIgnoreAxiomsReadErrors = true
     return manager
 }
 

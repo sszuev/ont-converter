@@ -32,20 +32,6 @@ data class OntologyMap(
     }
 
     /**
-     * Gets [OWLOntologyID] by document [IRI].
-     */
-    fun geOntologyID(documentIRI: IRI): OWLOntologyID? {
-        return ids[documentIRI]
-    }
-
-    /**
-     * Returns all document [IRI]s as sequence.
-     */
-    fun documents(): Sequence<IRI> {
-        return ids.keys.asSequence()
-    }
-
-    /**
      * Returns a sequence of document sources in ascending order of imports count.
      * @return a [Sequence] of [OntGraphDocumentSource]s
      */
@@ -55,24 +41,10 @@ data class OntologyMap(
             .map { createSource(it.key, it.value) }
     }
 
-    /**
-     * Represents the mapper as [Map].
-     * @return [Map] with [IRI]-[OWLOntologyID] pairs.
-     */
-    fun toIdsMap(): Map<IRI, OWLOntologyID> {
-        return ids
-    }
-
-    /**
-     * Answers `true` if this map is empty.
-     */
-    val isEmpty: Boolean
-        get() = ids.isEmpty()
-
     override fun toString(): String {
         return ids.entries.asSequence()
             .map { "<${it.key}> => ${ontologyName(it.value)} [${formats[it.key]}]" }
-            .joinToString("\n")
+            .joinToString(separator = ", ", prefix = "{", postfix = "}")
     }
 
     companion object {
