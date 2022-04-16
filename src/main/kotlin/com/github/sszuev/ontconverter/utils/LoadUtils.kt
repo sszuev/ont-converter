@@ -18,29 +18,34 @@ import kotlin.streams.asSequence
 private val logger: Logger = LoggerFactory.getLogger("LoadUtils.kt")
 
 /**
- * Loads single ontology from the [source] into the specified [manager].
+ * Loads the specified [file] containing ontology into the specified [manager].
  *
- * @param [manager][OntologyManager]
- * @param [source][OWLOntologyDocumentSource]
+ * @param [file][Path]
+ * @param [format][OntFormat] or `null`
+ * @param [manager][OntologyManager] the manager
+ * (by default it is soft manager, which ignores any missing imports and other errors)
  * @param [ignoreExceptions][Boolean]
- * @return [OWLOntologyID?][OWLOntologyID]
+ * @return [OntologyMap]
  */
 @Throws(OntApiException::class)
-internal fun loadSource(
-    manager: OntologyManager,
-    source: OWLOntologyDocumentSource,
-    ignoreExceptions: Boolean
-): OWLOntologyID? {
-    return loadSourceOntology(manager, source, ignoreExceptions)?.ontologyID
+internal fun loadFile(
+    file: Path,
+    format: OntFormat?,
+    ignoreExceptions: Boolean,
+    manager: OntologyManager = createSoftManager()
+): OntologyMap {
+    return loadOntologyMapping(IRI.create(file.toUri()), format, manager, ignoreExceptions)
 }
 
 /**
  * Loads the specified directory into an [OntologyMap] or several [OntologyMap]s.
  * The catalog may contain duplicate ontologies (ontologies with the same id),
  * in which case multiple mappings will be created.
- * @param [dir]
- * @param [format] or `null`
- * @param [factory] to produce safe manager, which ignores missing imports
+ *
+ * @param [dir][Path]
+ * @param [format][OntFormat] or `null`
+ * @param [factory] to produce manager instances
+ * (by default it produces soft managers, which ignore any missing imports, have no transformations, etc)
  * @param [continueIfError]
  * @return [List] of [OntologyMap]s
  */
@@ -48,13 +53,54 @@ internal fun loadSource(
 internal fun loadDirectory(
     dir: Path,
     format: OntFormat?,
-    factory: () -> OntologyManager,
-    continueIfError: Boolean
+    continueIfError: Boolean,
+    factory: () -> OntologyManager = ::createSoftManager
+): List<OntologyMap> {
+    return loadOntologyMappings(
+        { listFiles(dir, continueIfError) },
+        factory,
+        { i, m -> loadOntology(createSource(i, format), m, continueIfError) }
+    )
+}
+
+/**
+ * Loads single ontology from the [documentIRI] using the specified [manager] in form of [OntologyMap].
+ *
+ * @param [documentIRI][IRI]
+ * @param [format] or `null`
+ * @param [manager][OntologyManager]
+ * @param [ignoreExceptions][Boolean]
+ * @return [OntologyMap] (possibly empty in case of error)
+ */
+@Throws(OntApiException::class)
+internal fun loadOntologyMapping(
+    documentIRI: IRI,
+    format: OntFormat?,
+    manager: OntologyManager,
+    ignoreExceptions: Boolean
+): OntologyMap {
+    val source = createSource(documentIRI, format)
+    val ont = loadOntology(source, manager, ignoreExceptions) ?: return OntologyMap.of()
+    return OntologyMap.of(documentIRI to ont)
+}
+
+/**
+ * Loads many ontologies from a sequence of sources (provided by [sourceProvider]) using the [ontologyLoader].
+ *
+ * @param [sourceProvider] provides sources as [Sequence] of [IRI]s
+ * @param [managerFactory] manager factory
+ * @param [ontologyLoader] method to load [Ontology] from [IRI] to [OntologyManager]
+ * @return a [List] of [Ontology]s
+ */
+internal fun loadOntologyMappings(
+    sourceProvider: () -> Sequence<IRI>,
+    managerFactory: () -> OntologyManager,
+    ontologyLoader: (IRI, OntologyManager) -> Ontology?,
 ): List<OntologyMap> {
     val ontologies: MutableMap<IRI, Ontology> = LinkedHashMap() // LinkedHashMap to preserve order
-    listFiles(dir, continueIfError).forEach {
-        val manager = factory.invoke() // each ontology has its own manager to avoid possible clashes
-        val ont = loadSourceOntology(manager, createSource(it, format), continueIfError)
+    sourceProvider.invoke().forEach {
+        val manager = managerFactory.invoke() // each ontology has its own manager to avoid possible clashes
+        val ont = ontologyLoader.invoke(it, manager)
         if (ont != null) {
             ontologies[it] = ont
         }
@@ -74,6 +120,7 @@ internal fun loadDirectory(
 /**
  * Transforms a collection of ([document][IRI] - [Ontology]) pairs to
  * a collection of ([document][IRI] - [importDocument][IRI][Set]) pairs.
+ *
  * @param [ontologies]
  * @return [Map]
  */
@@ -140,9 +187,16 @@ private fun connectedByDirectImports(
         .isEmpty()
 }
 
-private fun loadSourceOntology(
-    manager: OntologyManager,
+/**
+ * Performs ontology loading.
+ * @param [source][OWLOntologyDocumentSource]
+ * @param [manager][OntologyManager]
+ * @param [ignoreExceptions][Boolean]
+ * @return [Ontology] or `null`
+ */
+internal fun loadOntology(
     source: OWLOntologyDocumentSource,
+    manager: OntologyManager,
     ignoreExceptions: Boolean
 ): Ontology? {
     return try {
@@ -150,9 +204,9 @@ private fun loadSourceOntology(
     } catch (ex: OWLOntologyCreationException) {
         val iri: IRI = getSourceIRI(source)
         if (ignoreExceptions) {
-            logger.error("Unable to load ontology document $iri")
+            logger.error("Failed to load ontology document $iri")
             return null
         }
-        throw OntApiException("Can't proceed the ontology document $iri", ex)
+        throw OntApiException("Failed to load ontology document $iri", ex)
     }
 }

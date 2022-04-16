@@ -2,12 +2,16 @@ package com.github.sszuev.ontconverter
 
 import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntologyManager
+import com.github.sszuev.ontconverter.ontapi.OntologyMap
 import com.github.sszuev.ontconverter.utils.createCopyManager
 import com.github.sszuev.ontconverter.utils.createManager
-import com.github.sszuev.ontconverter.utils.createSource
-import com.github.sszuev.ontconverter.utils.loadSource
+import com.github.sszuev.ontconverter.utils.loadFile
+import com.github.sszuev.ontconverter.utils.loadOntology
 import org.semanticweb.owlapi.formats.PrefixDocumentFormat
-import org.semanticweb.owlapi.model.*
+import org.semanticweb.owlapi.model.IRI
+import org.semanticweb.owlapi.model.OWLDocumentFormat
+import org.semanticweb.owlapi.model.OWLOntology
+import org.semanticweb.owlapi.model.OWLOntologyStorageException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -32,42 +36,55 @@ class Processor(private val args: Args) {
     }
 
     private fun handleSingleFile() {
-        val m = createManager(args.personality, force = args.force, spin = args.spin)
-        val s = createSource(IRI.create(args.sourceFile.toUri()), args.sourceFormat)
-        val id = loadSource(m, s, args.force) ?: return
-        save(m, mapOf(s.documentIRI to id))
+        val mapping = loadFile(args.sourceFile, args.sourceFormat, args.force)
+        val manager = compile(createManager(args.personality, force = args.force, spin = args.spin), mapping)
+        if (manager != null) {
+            save(manager, mapping)
+        }
     }
 
     /**
-     * Saves ontologies to the target.
+     * Prepares manager for saving by passing preloaded ontologies,
+     * loading dependent ontologies, if required cleaning up final manager instance from possible RDF garbage.
+     * @param[manager][OntologyManager]
+     * @param[map][OntologyMap]
+     * @return [OntologyManager] same instance or new one or `null`
      */
     @Throws(OntApiException::class)
-    internal fun save(manager: OntologyManager, map: Map<IRI, OWLOntologyID>) {
-        if (map.isEmpty()) {
+    internal fun compile(manager: OntologyManager, map: OntologyMap): OntologyManager? {
+        if (map.ids.isEmpty()) {
             if (args.force) {
                 logger.error("Nothing to save")
-                return
+                return null
             }
             throw OntApiException("Noting to save")
         }
-
+        map.sources().forEach { loadOntology(it, manager, args.force) }
         logger.debug(
-            "Number of ontologies in the manager: ${
-                manager.ontologies().count()
-            }, number of ontologies to save: ${map.size}"
+            "Number of ontologies in the manager: ${manager.ontologies().count()}, " +
+                    "number of ontologies to save: ${map.ids.size}"
         )
-        val man = if (args.refine) {
+        return if (args.refine) {
             logger.info("Refine...")
             createCopyManager(source = manager, ignoreExceptions = args.force)
         } else {
             manager
         }
-        for (src in map.keys) {
-            val id = map[src]!!
+    }
+
+    /**
+     * Saves ontologies to the target.
+     * @param[manager][OntologyManager]
+     * @param[map][OntologyMap]
+     */
+    @Throws(OntApiException::class)
+    internal fun save(manager: OntologyManager, map: OntologyMap) {
+        for (src in map.ids.keys) {
+            val id = map.ids[src]!!
             val file: IRI = toResultFile(src)
             val name: String = id.ontologyIRI.map { "<${it.iriString}>" }.orElse("<anonymous>")
             val ont: OWLOntology =
-                requireNotNull(man.getOntology(id)) { "The ontology not found. id=$name, file=$src." }
+                requireNotNull(manager.getOntology(id)) { "The ontology not found. id=$name, file=$src." }
             logger.info("Save ontology $name as ${args.targetFormat} to ${file}.")
             try {
                 val internalFormat = ont.format ?: throw IllegalStateException("No format for ont $name")
@@ -76,7 +93,7 @@ class Processor(private val args: Args) {
                     targetFormat.asPrefixOWLDocumentFormat()
                         .setPrefixManager(internalFormat.asPrefixOWLDocumentFormat())
                 }
-                man.saveOntology(ont, targetFormat, file)
+                manager.saveOntology(ont, targetFormat, file)
             } catch (e: OWLOntologyStorageException) {
                 if (args.force) {
                     logger.error("Can't save $name to $file")

@@ -5,8 +5,6 @@ import com.github.owlcs.ontapi.OntFormat
 import com.github.owlcs.ontapi.OntManagers
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.semanticweb.owlapi.io.IRIDocumentSource
-import org.semanticweb.owlapi.model.IRI
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
@@ -17,17 +15,24 @@ class LoaderUtilsTest {
 
     @Test
     fun `test load single ontology fail`() {
-        val m = OntManagers.createManager()
-        val s = IRIDocumentSource(IRI.create("iri"))
-        Assertions.assertNull(loadSource(m, s, true))
-        Assertions.assertThrows(OntApiException::class.java) { loadSource(m, s, false) }
+        val file = Path.of("XX")
+        val map = loadFile(file, null, ignoreExceptions = true)
+        Assertions.assertTrue(map.ids.isEmpty())
+        Assertions.assertThrows(OntApiException::class.java) {
+            loadFile(
+                file,
+                OntFormat.DL,
+                ignoreExceptions = false,
+                OntManagers.createManager()
+            )
+        }
     }
 
     @Test
     fun `test load directory`() {
         val dir = Path.of(LoaderUtilsTest::class.java.getResource("/simple")!!.toURI())
         val parent = dir.fileName.toString()
-        val mappings = loadDirectory(dir, OntFormat.TURTLE, ::createSoftManager, false)
+        val mappings = loadDirectory(dir, OntFormat.TURTLE, false, ::createSoftManager)
         mappings.forEach {
             logger.debug("$it")
         }

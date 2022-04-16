@@ -2,6 +2,7 @@ package com.github.sszuev.ontconverter
 
 import com.github.owlcs.ontapi.OntFormat
 import com.github.owlcs.ontapi.OntManagers
+import com.github.sszuev.ontconverter.ontapi.OntologyMap
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
@@ -32,7 +33,7 @@ class ProcessorTest {
         val ont = manager.createOntology(IRI.create("http://ont"))
 
         val p = Processor(args)
-        p.save(manager, mapOf(IRI.create(src.toUri()) to ont.ontologyID))
+        p.save(manager, OntologyMap.of(IRI.create(src.toUri()) to ont))
         Assertions.assertTrue(dst.exists())
     }
 
