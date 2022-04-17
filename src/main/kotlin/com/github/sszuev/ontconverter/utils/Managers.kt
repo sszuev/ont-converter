@@ -2,10 +2,12 @@ package com.github.sszuev.ontconverter.utils
 
 import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntManagers
+import com.github.owlcs.ontapi.Ontology
 import com.github.owlcs.ontapi.OntologyManager
 import com.github.owlcs.ontapi.config.OntConfig
 import com.github.owlcs.ontapi.jena.impl.conf.OntModelConfig
 import com.github.owlcs.ontapi.jena.impl.conf.OntPersonality
+import org.semanticweb.owlapi.model.AddOntologyAnnotation
 import org.semanticweb.owlapi.model.MissingImportHandlingStrategy
 import org.semanticweb.owlapi.model.parameters.OntologyCopy
 import org.slf4j.Logger
@@ -22,11 +24,19 @@ fun createDefaultManager(): OntologyManager = OntManagers.createManager()
  * Creates a [manager][OntologyManager] according to specified settings.
  *
  * @param [personality][OntPersonality]
- * @param [force] if `true`, then missed imports and wrong axioms are ignored
+ * @param [softLoading] if `true`, then missed imports and wrong axioms are ignored
+ * @param [onlyFileSystem] if `true`, then loads only from file system, web-diving is disabled
+ * @param [withLoadTransformation] if `true`, then load graph transformation is performed
  * @param [spin] if `true`, then transformation `spin-queries -> axioms` is enabled into configuration
  * @return [OntologyManager]
  */
-fun createManager(personality: OntPersonality?, force: Boolean, spin: Boolean): OntologyManager {
+fun createManager(
+    personality: OntPersonality?,
+    softLoading: Boolean,
+    onlyFileSystem: Boolean,
+    withLoadTransformation: Boolean,
+    spin: Boolean
+): OntologyManager {
     val manager: OntologyManager = createDefaultManager()
     val config: OntConfig = manager.ontologyConfigurator
     if (personality != null) {
@@ -35,7 +45,11 @@ fun createManager(personality: OntPersonality?, force: Boolean, spin: Boolean): 
     if (spin) {
         TODO("spin transformation is not supported right now")
     }
-    if (force) {
+    if (onlyFileSystem) {
+        config.supportedSchemes = listOf(OntConfig.DefaultScheme.FILE)
+    }
+    config.isPerformTransformation = !withLoadTransformation
+    if (softLoading) {
         config.missingImportHandlingStrategy = MissingImportHandlingStrategy.SILENT
         config.isIgnoreAxiomsReadErrors = true
     }
@@ -64,21 +78,27 @@ fun createSoftManager(): OntologyManager {
 }
 
 /**
- * Creates (if not specified) a manager and copies managers content form the [source].
- *
+ * Creates (if not specified) a manager and copies all the OWL contents of [source] manager,
+ * leaving non-OWL RDF garbage.
  * @param [source][OntologyManager]
- * @param [target][OntologyManager]
+ * @param [target][OntologyManager] (by default [createDefaultManager])
  * @param [ignoreExceptions][Boolean]
  * @return [OntologyManager] a new manager or [target] if specified
  */
 @Throws(OntApiException::class)
-fun createCopyManager(
+fun createOWLCopyManager(
     source: OntologyManager,
     target: OntologyManager = createDefaultManager(),
     ignoreExceptions: Boolean = true
 ): OntologyManager {
     target.ontologyConfigurator.personality = source.ontologyConfigurator.personality
-    copyOntologies(source, target, ignoreExceptions)
+    copyOntologies(source, target, ignoreExceptions) { targetManager, srcOntology ->
+        val res = targetManager.createOntology(srcOntology.ontologyID)
+        srcOntology.annotations().forEach {
+            res.applyChange(AddOntologyAnnotation(res, it))
+        }
+        srcOntology.axioms().forEach { res.add(it) }
+    }
     return target
 }
 
@@ -87,16 +107,25 @@ fun createCopyManager(
  * @param [source][OntologyManager]
  * @param [target][OntologyManager]
  * @param [ignoreExceptions][Boolean]
+ * @param [copyMethod] - by default coping with [OntologyCopy.DEEP]
  */
 @Throws(OntApiException::class)
-fun copyOntologies(source: OntologyManager, target: OntologyManager, ignoreExceptions: Boolean) {
+fun copyOntologies(
+    source: OntologyManager,
+    target: OntologyManager,
+    ignoreExceptions: Boolean,
+    copyMethod: (OntologyManager, Ontology) -> Unit =
+        { targetManager, sourceOntology ->
+            targetManager.copyOntology(sourceOntology, OntologyCopy.DEEP)
+        }
+) {
     source.ontologies()
         .sorted(byImportsCount)
         .forEach {
             val name: String = ontologyName(it.ontologyID)
             logger.trace("Copy ontology $name")
             try {
-                target.copyOntology(it, OntologyCopy.DEEP)
+                copyMethod.invoke(target, it as Ontology)
             } catch (ex: Exception) {
                 if (ignoreExceptions) {
                     logger.error("Can't copy ontology document $name")

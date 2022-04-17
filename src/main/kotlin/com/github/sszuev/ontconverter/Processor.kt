@@ -3,15 +3,12 @@ package com.github.sszuev.ontconverter
 import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntologyManager
 import com.github.sszuev.ontconverter.ontapi.OntologyMap
-import com.github.sszuev.ontconverter.utils.createCopyManager
 import com.github.sszuev.ontconverter.utils.createManager
+import com.github.sszuev.ontconverter.utils.createOWLCopyManager
 import com.github.sszuev.ontconverter.utils.loadFile
 import com.github.sszuev.ontconverter.utils.loadOntology
 import org.semanticweb.owlapi.formats.PrefixDocumentFormat
-import org.semanticweb.owlapi.model.IRI
-import org.semanticweb.owlapi.model.OWLDocumentFormat
-import org.semanticweb.owlapi.model.OWLOntology
-import org.semanticweb.owlapi.model.OWLOntologyStorageException
+import org.semanticweb.owlapi.model.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -37,9 +34,17 @@ class Processor(private val args: Args) {
 
     private fun handleSingleFile() {
         val mapping = loadFile(args.sourceFile, args.sourceFormat, args.force)
-        val manager = compile(createManager(args.personality, force = args.force, spin = args.spin), mapping)
+        val manager = setup(
+            createManager(
+                personality = args.personality,
+                softLoading = args.force,
+                onlyFileSystem = !args.web,
+                withLoadTransformation = true,
+                spin = args.spin
+            ), mapping
+        )
         if (manager != null) {
-            save(manager, mapping)
+            save(manager, mapping.ids)
         }
     }
 
@@ -51,7 +56,7 @@ class Processor(private val args: Args) {
      * @return [OntologyManager] same instance or new one or `null`
      */
     @Throws(OntApiException::class)
-    internal fun compile(manager: OntologyManager, map: OntologyMap): OntologyManager? {
+    internal fun setup(manager: OntologyManager, map: OntologyMap): OntologyManager? {
         if (map.ids.isEmpty()) {
             if (args.force) {
                 logger.error("Nothing to save")
@@ -60,27 +65,28 @@ class Processor(private val args: Args) {
             throw OntApiException("Noting to save")
         }
         map.sources().forEach { loadOntology(it, manager, args.force) }
-        logger.debug(
-            "Number of ontologies in the manager: ${manager.ontologies().count()}, " +
-                    "number of ontologies to save: ${map.ids.size}"
-        )
-        return if (args.refine) {
+        val res = if (args.refine) {
             logger.info("Refine...")
-            createCopyManager(source = manager, ignoreExceptions = args.force)
+            createOWLCopyManager(source = manager, ignoreExceptions = args.force)
         } else {
             manager
         }
+        logger.debug(
+            "Number of ontologies in the manager: ${res.ontologies().count()}, " +
+                    "number of ontologies to save: ${map.ids.size}"
+        )
+        return res
     }
 
     /**
      * Saves ontologies to the target.
      * @param[manager][OntologyManager]
-     * @param[map][OntologyMap]
+     * @param[ontologies] a [Map] with ([IRI] - [OWLOntologyID]) pairs
      */
     @Throws(OntApiException::class)
-    internal fun save(manager: OntologyManager, map: OntologyMap) {
-        for (src in map.ids.keys) {
-            val id = map.ids[src]!!
+    internal fun save(manager: OntologyManager, ontologies: Map<IRI, OWLOntologyID>) {
+        for (src in ontologies.keys) {
+            val id = ontologies[src]!!
             val file: IRI = toResultFile(src)
             val name: String = id.ontologyIRI.map { "<${it.iriString}>" }.orElse("<anonymous>")
             val ont: OWLOntology =
