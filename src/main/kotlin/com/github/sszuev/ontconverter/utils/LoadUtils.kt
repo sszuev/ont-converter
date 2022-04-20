@@ -107,10 +107,16 @@ internal fun loadOntologyMappings(
     }
     val dependencies = toDependencyMap(ontologies)
     val components = findIndependentComponents(dependencies)
+    val ids = HashSet<OWLOntologyID>()
     return components
         .map {
             it.asSequence().map { iri ->
-                iri to ontologies[iri]!!
+                var ont = ontologies[iri]!!
+                if (!ids.add(ont.ontologyID)) {
+                    // make a copy of a base graph
+                    ont = copyBaseGraph(managerFactory.invoke(), ont)
+                }
+                iri to ont
             }.toMap()
         }
         .map { OntologyMap.of(it) }
@@ -125,7 +131,7 @@ internal fun loadOntologyMappings(
  * @return [Map]
  */
 private fun toDependencyMap(ontologies: Map<IRI, Ontology>): Map<IRI, Set<IRI>> {
-    val res: MutableMap<IRI, Set<IRI>> = HashMap()
+    val res: MutableMap<IRI, Set<IRI>> = LinkedHashMap()
     ontologies.forEach {
         val iri = it.key
         val ont: Ontology = it.value

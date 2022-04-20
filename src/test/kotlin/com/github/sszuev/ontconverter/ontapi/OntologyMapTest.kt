@@ -38,7 +38,7 @@ class OntologyMapTest {
 
     @Test
     fun `test load file`() {
-        val ont = OntologyMapTest::class.java.getResourceAsStream("/pizza.ttl").use {
+        val ont = OntologyMapTest::class.java.getResourceAsStream("/ontologies/pizza.ttl").use {
             createDefaultManager().loadOntologyFromOntologyDocument(it!!)
         }
         val doc = IRI.create(Paths.get("/x/x/x.x").toFile())

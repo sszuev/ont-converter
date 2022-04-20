@@ -114,10 +114,11 @@ class ProcessorTest {
     }
 
     @Test
-    fun `test process single file`(@TempDir dir: Path) {
+    fun `test run single file`(@TempDir dir: Path) {
         val targetFile = dir.resolve("dst.owl")
         Assumptions.assumeFalse(targetFile.exists())
-        val sourceFile = Paths.get(ProcessorTest::class.java.getResource("/pizza.ttl")?.toURI() ?: Assertions.fail())
+        val sourceFile =
+            Paths.get(ProcessorTest::class.java.getResource("/ontologies/pizza.ttl")?.toURI() ?: Assertions.fail())
         val args = Args(
             sourceFile = sourceFile, sourceFormat = OntFormat.TURTLE, sourceIsDirectory = false,
             targetFile = targetFile, targetFormat = OntFormat.OWL_XML, targetIsDirectory = false,

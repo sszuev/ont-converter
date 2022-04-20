@@ -7,7 +7,6 @@ import com.github.owlcs.ontapi.OntologyManager
 import com.github.owlcs.ontapi.config.OntConfig
 import com.github.owlcs.ontapi.jena.impl.conf.OntModelConfig
 import com.github.owlcs.ontapi.jena.impl.conf.OntPersonality
-import org.semanticweb.owlapi.model.AddOntologyAnnotation
 import org.semanticweb.owlapi.model.MissingImportHandlingStrategy
 import org.semanticweb.owlapi.model.parameters.OntologyCopy
 import org.slf4j.Logger
@@ -93,11 +92,7 @@ fun createOWLCopyManager(
 ): OntologyManager {
     target.ontologyConfigurator.personality = source.ontologyConfigurator.personality
     copyOntologies(source, target, ignoreExceptions) { targetManager, srcOntology ->
-        val res = targetManager.createOntology(srcOntology.ontologyID)
-        srcOntology.annotations().forEach {
-            res.applyChange(AddOntologyAnnotation(res, it))
-        }
-        srcOntology.axioms().forEach { res.add(it) }
+        copyOWLContent(targetManager, srcOntology)
     }
     return target
 }
@@ -114,10 +109,9 @@ fun copyOntologies(
     source: OntologyManager,
     target: OntologyManager,
     ignoreExceptions: Boolean,
-    copyMethod: (OntologyManager, Ontology) -> Unit =
-        { targetManager, sourceOntology ->
-            targetManager.copyOntology(sourceOntology, OntologyCopy.DEEP)
-        }
+    copyMethod: (OntologyManager, Ontology) -> Unit = { targetManager, sourceOntology ->
+        insertOntology(targetManager, sourceOntology)
+    }
 ) {
     source.ontologies()
         .sorted(byImportsCount)
