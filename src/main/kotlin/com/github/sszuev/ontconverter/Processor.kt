@@ -3,10 +3,10 @@ package com.github.sszuev.ontconverter
 import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntologyManager
 import com.github.sszuev.ontconverter.ontapi.OntologyMap
-import com.github.sszuev.ontconverter.utils.createManager
-import com.github.sszuev.ontconverter.utils.createOWLCopyManager
-import com.github.sszuev.ontconverter.utils.loadFile
-import com.github.sszuev.ontconverter.utils.loadOntology
+import com.github.sszuev.ontconverter.utils.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.semanticweb.owlapi.formats.PrefixDocumentFormat
 import org.semanticweb.owlapi.model.*
 import org.slf4j.Logger
@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.nameWithoutExtension
 
 private val logger: Logger = LoggerFactory.getLogger(Processor::class.java)
 
@@ -25,15 +26,32 @@ class Processor(private val args: Args) {
     fun run() {
         logger.info("Start...")
         if (args.sourceIsDirectory) {
-            TODO("Directory ")
+            handleDirectory()
         } else {
             handleSingleFile()
         }
         logger.info("Done.")
     }
 
+    private fun handleDirectory() {
+        logger.info("Read directory ${args.sourceFile}")
+        val mappings = loadDirectory(args.sourceFile, args.sourceFormat, args.force)
+        runBlocking(Dispatchers.IO) {
+            mappings.map {
+                launch {
+                    processOntologyMap(it)
+                }
+            }.forEach { it.join() }
+        }
+    }
+
     private fun handleSingleFile() {
+        logger.info("Read file ${args.sourceFile}")
         val mapping = loadFile(args.sourceFile, args.sourceFormat, args.force)
+        processOntologyMap(mapping)
+    }
+
+    private fun processOntologyMap(mapping: OntologyMap) {
         val manager = setup(
             createManager(
                 personality = args.personality,
@@ -129,7 +147,7 @@ private fun composeResultFilePath(
     extension: String
 ): IRI {
     val src = Paths.get(inputFile.toURI())
-    val fileName = src.fileName.toString() + "." + extension
+    val fileName = src.fileName.nameWithoutExtension + "." + extension
     val relativeRes =
         inputDirectory.relativize(Paths.get(src.parent.toString() + outputDirectory.fileSystem.separator + fileName))
     var res = outputDirectory.resolve(relativeRes).normalize()

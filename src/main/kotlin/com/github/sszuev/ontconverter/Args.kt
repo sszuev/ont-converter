@@ -17,11 +17,11 @@ import kotlin.io.path.isDirectory
 
 data class Args(
     val sourceFile: Path,
-    val sourceFormat: OntFormat?,
+    val sourceFormat: OntFormat? = null,
     val sourceIsDirectory: Boolean,
     val targetFile: Path,
     val targetFormat: OntFormat,
-    val targetIsDirectory: Boolean,
+    val targetIsDirectory: Boolean = sourceIsDirectory,
     val punnings: OntModelConfig.StdMode = OntModelConfig.StdMode.LAX,
     val spin: Boolean = false,
     val refine: Boolean = false,

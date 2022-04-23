@@ -17,6 +17,9 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.exists
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.nameWithoutExtension
+import kotlin.io.path.readLines
 
 private val logger: Logger = LoggerFactory.getLogger(ProcessorTest::class.java)
 
@@ -98,7 +101,7 @@ class ProcessorTest {
     @Test
     fun `test save single ontology to directory`(@TempDir dir: Path) {
         val src = Path.of("/tmp/XXX/ont.ttl").toAbsolutePath()
-        val dst = dir.resolve(src.fileName.toString() + ".rdf")
+        val dst = dir.resolve(src.nameWithoutExtension + ".rdf")
         Assumptions.assumeFalse(dst.exists())
         val args = Args(
             sourceFile = src, sourceFormat = null, sourceIsDirectory = false,
@@ -133,6 +136,43 @@ class ProcessorTest {
             line = s.findFirst().orElseThrow { AssertionError() }
         }
         Assertions.assertEquals("<?xml version=\"1.0\"?>", line)
+    }
+
+    @Test
+    fun `test run directory`(@TempDir dir: Path) {
+        val koalaIRI = "http://protege.stanford.edu/plugins/owl/owl-library/koala.owl"
+        val pizzaIRI = "http://www.co-ode.org/ontologies/pizza/pizza.owl"
+
+        val targetDir = dir.resolve("dst")
+        Assumptions.assumeFalse(targetDir.exists())
+
+        val sourceDir =
+            Paths.get(ProcessorTest::class.java.getResource("/ontologies/")?.toURI() ?: Assertions.fail())
+        val args = Args(
+            sourceFile = sourceDir, sourceIsDirectory = true,
+            targetFile = targetDir, targetFormat = OntFormat.FUNCTIONAL_SYNTAX
+        )
+        logger.debug(args.toString())
+
+        Processor(args).run()
+        Assertions.assertTrue(targetDir.exists())
+
+        val files = targetDir.listDirectoryEntries()
+        files.forEach {
+            logger.debug("file=$it")
+        }
+        Assertions.assertEquals(2, files.size)
+
+        Assertions.assertTrue(
+            files[0].readLines().take(10)
+                .also { logger.debug("$it") }
+                .any { "Ontology(<$koalaIRI>" == it }
+        )
+        Assertions.assertTrue(
+            files[1].readLines().take(10)
+                .also { logger.debug("$it") }
+                .any { "Ontology(<$pizzaIRI>" == it }
+        )
     }
 }
 
