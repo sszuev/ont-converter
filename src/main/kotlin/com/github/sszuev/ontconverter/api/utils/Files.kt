@@ -27,7 +27,7 @@ fun listFiles(dir: Path, ignoreExceptions: Boolean): Sequence<IRI> {
             isRegularNonEmptyFile(it, ignoreExceptions)
         }
         .sortedWith(byPathLengthReversed)
-        .map { IRI.create(it.toUri()) }
+        .map { IRI.create(it.toFile()) }
 }
 
 private fun isRegularNonEmptyFile(file: Path, ignoreExceptions: Boolean): Boolean {

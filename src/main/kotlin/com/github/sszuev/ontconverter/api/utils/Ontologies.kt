@@ -8,7 +8,9 @@ import org.apache.jena.graph.Factory
 import org.apache.jena.graph.Graph
 import org.apache.jena.graph.GraphUtil
 import org.semanticweb.owlapi.io.OWLOntologyDocumentSource
-import org.semanticweb.owlapi.model.*
+import org.semanticweb.owlapi.model.AddOntologyAnnotation
+import org.semanticweb.owlapi.model.OWLOntology
+import org.semanticweb.owlapi.model.OWLOntologyCreationException
 import org.semanticweb.owlapi.model.parameters.OntologyCopy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -17,15 +19,6 @@ private val logger: Logger = LoggerFactory.getLogger("Ontologies.kt")
 
 val byImportsDeclarationCount: Comparator<Graph> = Comparator.comparingInt { Graphs.getImports(it).size }
 val byImportsCount: Comparator<OWLOntology> = Comparator.comparingLong { it.imports().count() }
-
-/**
- * [OWLOntologyID] -> [String].
- * @param [id][OWLOntologyID]
- * @return [String]
- */
-fun ontologyName(id: OWLOntologyID): String {
-    return id.ontologyIRI.map { "<${it.iriString}>" }.orElse("<anonymous>")
-}
 
 /**
  * Copies all owl content (axioms and annotations) ignoring non-OWL RDF triples.
@@ -82,14 +75,15 @@ fun loadOntology(
     manager: OntologyManager,
     ignoreExceptions: Boolean
 ): Ontology? {
+    val name = sourceName(source)
     return try {
+        logger.debug("Load ontology-document from $name")
         manager.loadOntologyFromOntologyDocument(source)
     } catch (ex: OWLOntologyCreationException) {
-        val iri: IRI = getSourceIRI(source)
         if (ignoreExceptions) {
-            logger.error("Failed to load ontology document $iri")
+            logger.error("Failed to load ontology-document from $name: ${exceptionMessage(ex)}")
             return null
         }
-        throw OntApiException("Failed to load ontology document $iri", ex)
+        throw OntApiException("Failed to load ontology-document from $name", ex)
     }
 }

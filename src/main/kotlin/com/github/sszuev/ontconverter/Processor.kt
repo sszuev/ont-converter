@@ -3,12 +3,16 @@ package com.github.sszuev.ontconverter
 import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntologyManager
 import com.github.sszuev.ontconverter.api.*
+import com.github.sszuev.ontconverter.api.utils.exceptionMessage
 import com.github.sszuev.ontconverter.api.utils.loadOntology
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.semanticweb.owlapi.formats.PrefixDocumentFormat
-import org.semanticweb.owlapi.model.*
+import org.semanticweb.owlapi.model.IRI
+import org.semanticweb.owlapi.model.OWLDocumentFormat
+import org.semanticweb.owlapi.model.OWLOntology
+import org.semanticweb.owlapi.model.OWLOntologyID
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -89,7 +93,7 @@ class Processor(private val args: Args) {
         } else {
             manager
         }
-        logger.debug(
+        logger.trace(
             "Number of ontologies in the manager: ${res.ontologies().count()}, " +
                     "number of ontologies to save: ${map.ids.size}"
         )
@@ -105,11 +109,11 @@ class Processor(private val args: Args) {
     internal fun save(manager: OntologyManager, ontologies: Map<IRI, OWLOntologyID>) {
         for (src in ontologies.keys) {
             val id = ontologies[src]!!
-            val file: IRI = toResultFile(src)
+            val file = toResultFile(src)
             val name: String = id.ontologyIRI.map { "<${it.iriString}>" }.orElse("<anonymous>")
             val ont: OWLOntology =
-                requireNotNull(manager.getOntology(id)) { "The ontology not found. id=$name, file=$src." }
-            logger.info("Save ontology $name as ${args.targetFormat} to ${file}.")
+                requireNotNull(manager.getOntology(id)) { "The ontology not found. id=$name, file=$src" }
+            logger.info("Save ontology $name as ${args.targetFormat} to $file")
             try {
                 val internalFormat = ont.format ?: throw IllegalStateException("No format for ont $name")
                 val targetFormat: OWLDocumentFormat = args.targetFormat.createOwlFormat()
@@ -117,20 +121,20 @@ class Processor(private val args: Args) {
                     targetFormat.asPrefixOWLDocumentFormat()
                         .setPrefixManager(internalFormat.asPrefixOWLDocumentFormat())
                 }
-                manager.saveOntology(ont, targetFormat, file)
-            } catch (e: OWLOntologyStorageException) {
+                manager.saveOntology(ont, targetFormat, IRI.create(file.toFile()))
+            } catch (ex: Exception) {
                 if (args.force) {
-                    logger.error("Can't save $name to $file")
+                    logger.error("Can't save $name to ${file}: ${exceptionMessage(ex)}")
                 } else {
-                    throw OntApiException("Can't save $name to $file", e)
+                    throw OntApiException("Can't save $name to $file", ex)
                 }
             }
         }
     }
 
-    private fun toResultFile(iri: IRI): IRI {
+    private fun toResultFile(iri: IRI): Path {
         return if (!args.targetIsDirectory) {
-            IRI.create(args.targetFile.toUri())
+            args.targetFile
         } else composeResultFilePath(
             if (args.sourceIsDirectory) args.sourceFile else args.sourceFile.parent,
             args.targetFile,
@@ -145,7 +149,7 @@ private fun composeResultFilePath(
     outputDirectory: Path,
     inputFile: IRI,
     extension: String
-): IRI {
+): Path {
     val src = Paths.get(inputFile.toURI())
     val fileName = src.fileName.nameWithoutExtension + "." + extension
     val relativeRes =
@@ -153,5 +157,5 @@ private fun composeResultFilePath(
     var res = outputDirectory.resolve(relativeRes).normalize()
     Files.createDirectories(res.parent)
     res = res.parent.toRealPath().resolve(res.fileName)
-    return IRI.create(res.toUri())
+    return res
 }

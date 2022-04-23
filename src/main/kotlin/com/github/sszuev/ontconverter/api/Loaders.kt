@@ -5,6 +5,7 @@ import com.github.owlcs.ontapi.OntFormat
 import com.github.owlcs.ontapi.Ontology
 import com.github.owlcs.ontapi.OntologyManager
 import com.github.sszuev.ontconverter.api.utils.*
+import org.semanticweb.owlapi.io.OWLOntologyDocumentSource
 import org.semanticweb.owlapi.model.IRI
 import org.semanticweb.owlapi.model.OWLOntologyID
 import java.io.IOException
@@ -28,7 +29,7 @@ fun loadFile(
     ignoreExceptions: Boolean,
     manager: OntologyManager = createSoftManager()
 ): OntologyMap {
-    return loadOntologyMapping(IRI.create(file.toUri()), format, manager, ignoreExceptions)
+    return loadOntologyMapping(createSource(file, format), manager, ignoreExceptions)
 }
 
 /**
@@ -58,24 +59,22 @@ fun loadDirectory(
 }
 
 /**
- * Loads single ontology from the [documentIRI] using the specified [manager] in form of [OntologyMap].
+ * Loads a single ontology from the [source] using the specified [manager],
+ * returns the result in the form of [OntologyMap].
  *
- * @param [documentIRI][IRI]
- * @param [format] or `null`
+ * @param [source][OWLOntologyDocumentSource]
  * @param [manager][OntologyManager]
  * @param [ignoreExceptions][Boolean]
  * @return [OntologyMap] (possibly empty in case of error)
  */
 @Throws(OntApiException::class)
 fun loadOntologyMapping(
-    documentIRI: IRI,
-    format: OntFormat?,
+    source: OWLOntologyDocumentSource,
     manager: OntologyManager,
     ignoreExceptions: Boolean
 ): OntologyMap {
-    val source = createSource(documentIRI, format)
     val ont = loadOntology(source, manager, ignoreExceptions) ?: return OntologyMap.of()
-    return OntologyMap.of(documentIRI to ont)
+    return OntologyMap.of(source.documentIRI to ont)
 }
 
 /**

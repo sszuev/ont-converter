@@ -11,5 +11,6 @@ fun main(argsArray: Array<String>) {
     org.apache.log4j.Logger.getRootLogger().level = if (args.verbose)
         org.apache.log4j.Level.DEBUG else org.apache.log4j.Level.FATAL
     logger.debug(args.printString())
+    Processor(args).run()
 }
 
