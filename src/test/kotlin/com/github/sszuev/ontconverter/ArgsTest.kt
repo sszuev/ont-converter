@@ -14,7 +14,7 @@ class ArgsTest {
             sourceFile = Path.of("A"), sourceFormat = OntFormat.CSV, sourceIsDirectory = true,
             targetFile = Path.of("B"), targetFormat = OntFormat.DL, targetIsDirectory = false,
             punnings = OntModelConfig.StdMode.STRICT,
-            spin = false, refine = true, web = false, force = true, verbose = false
+            refine = true, web = false, force = true, verbose = false
         )
         Assertions.assertEquals(
             "Arguments:\n" +
@@ -23,7 +23,6 @@ class ArgsTest {
                     "    outputFile=B\n" +
                     "    outputFormat=DL\n" +
                     "    punnings=STRICT\n" +
-                    "    spin=false\n" +
                     "    refine=true\n" +
                     "    web=false\n" +
                     "    force=true\n" +
@@ -35,7 +34,7 @@ class ArgsTest {
             sourceFile = Path.of("C"), sourceFormat = OntFormat.KRSS, sourceIsDirectory = false,
             targetFile = Path.of("D"), targetFormat = OntFormat.RDF_XML, targetIsDirectory = true,
             punnings = OntModelConfig.StdMode.MEDIUM,
-            spin = true, refine = false, web = true, force = false, verbose = true
+            refine = false, web = true, force = false, verbose = true
         )
         Assertions.assertEquals(
             "Arguments:\n" +
@@ -44,7 +43,6 @@ class ArgsTest {
                     "    outputDir=D\n" +
                     "    outputFormat=RDF_XML\n" +
                     "    punnings=MEDIUM\n" +
-                    "    spin=true\n" +
                     "    refine=false\n" +
                     "    web=true\n" +
                     "    force=false\n" +

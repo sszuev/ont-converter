@@ -30,23 +30,18 @@ fun createDefaultManager(): OntologyManager = OntManagers.createManager()
  * @param [softLoading] if `true`, then missed imports and wrong axioms are ignored
  * @param [onlyFileSystem] if `true`, then loads only from file system, web-diving is disabled
  * @param [withLoadTransformation] if `true`, then load graph transformation is performed
- * @param [spin] if `true`, then transformation `spin-queries -> axioms` is enabled into configuration
  * @return [OntologyManager]
  */
 fun createManager(
     personality: OntPersonality?,
     softLoading: Boolean,
     onlyFileSystem: Boolean,
-    withLoadTransformation: Boolean,
-    spin: Boolean
+    withLoadTransformation: Boolean
 ): OntologyManager {
     val manager: OntologyManager = createDefaultManager()
     val config: OntConfig = manager.ontologyConfigurator
     if (personality != null) {
         config.personality = personality
-    }
-    if (spin) {
-        TODO("spin transformation is not supported right now")
     }
     if (onlyFileSystem) {
         config.supportedSchemes = listOf(OntConfig.DefaultScheme.FILE)

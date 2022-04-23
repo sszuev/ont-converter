@@ -23,7 +23,6 @@ data class Args(
     val targetFormat: OntFormat,
     val targetIsDirectory: Boolean = sourceIsDirectory,
     val punnings: OntModelConfig.StdMode = OntModelConfig.StdMode.LAX,
-    val spin: Boolean = false,
     val refine: Boolean = false,
     val web: Boolean = false,
     val force: Boolean = false,
@@ -45,7 +44,6 @@ data class Args(
             |    output${(if (targetIsDirectory) "Dir=" else "File=") + targetFile}
             |    outputFormat=$targetFormat
             |    punnings=$punnings
-            |    spin=$spin
             |    refine=$refine
             |    web=$web
             |    force=$force
@@ -98,14 +96,6 @@ internal fun parseArgs(args: Array<String>): Args {
             """.trimIndent()
     ).default(OntModelConfig.StdMode.LAX)
 
-    val spin by parser.option(
-        ArgType.Boolean, shortName = "s", fullName = "spin",
-        description = """
-            Use spin transformation to replace rdf:List based spin-constructs (e.g sp:Select)
-            with their text-literal representation to produce compact axioms list.
-            """.trimIndent()
-    ).default(false)
-
     val refine by parser.option(
         ArgType.Boolean, shortName = "r", fullName = "refine",
         description = """
@@ -141,7 +131,7 @@ internal fun parseArgs(args: Array<String>): Args {
     return Args(
         source, sourceFormat, source.isDirectory(),
         target, targetFormat, target.isDirectory(),
-        punnings, spin, refine, web, force, verbose
+        punnings, refine, web, force, verbose
     )
 }
 

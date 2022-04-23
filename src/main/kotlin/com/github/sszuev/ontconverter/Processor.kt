@@ -61,8 +61,7 @@ class Processor(private val args: Args) {
                 personality = args.personality,
                 softLoading = args.force,
                 onlyFileSystem = !args.web,
-                withLoadTransformation = true,
-                spin = args.spin
+                withLoadTransformation = true
             ), mapping
         )
         if (manager != null) {
