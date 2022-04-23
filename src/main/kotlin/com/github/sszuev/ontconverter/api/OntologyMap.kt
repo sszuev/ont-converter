@@ -3,7 +3,6 @@ package com.github.sszuev.ontconverter.api
 import com.github.owlcs.ontapi.OntFormat
 import com.github.owlcs.ontapi.OntGraphDocumentSource
 import com.github.owlcs.ontapi.Ontology
-import com.github.sszuev.ontconverter.api.utils.byImportsDeclarationCount
 import com.github.sszuev.ontconverter.api.utils.createSource
 import com.github.sszuev.ontconverter.api.utils.ontologyName
 import org.apache.jena.graph.Graph
@@ -36,9 +35,7 @@ data class OntologyMap(
      * @return a [Sequence] of [OntGraphDocumentSource]s
      */
     fun sources(): Sequence<OWLOntologyDocumentSource> {
-        return graphs.entries.asSequence()
-            .sortedWith(java.util.Map.Entry.comparingByValue(byImportsDeclarationCount))
-            .map { createSource(it.key, it.value) }
+        return graphs.entries.asSequence().map { createSource(it.key, it.value) }
     }
 
     override fun toString(): String {
@@ -50,7 +47,8 @@ data class OntologyMap(
     companion object {
         /**
          * Creates ontology mapping object.
-         * @param [ontologies] ([source][IRI] - [Ontology]) pairs
+         *
+         * @param [ontologies] ([document-source][IRI] - [Ontology]) pairs
          * @return [OntologyMap]
          */
         fun of(vararg ontologies: Pair<IRI, Ontology>): OntologyMap {
@@ -58,14 +56,15 @@ data class OntologyMap(
         }
 
         /**
-         * Creates ontology mapping object.
-         * @param [ontologies] a [Map] with ([source][IRI] - [Ontology]) pairs
+         * Creates an ontology mapping object, preserving an order defined by the input map.
+         *
+         * @param [ontologies] a [Map] with ([document-source][IRI] - [Ontology]) pairs
          * @return [OntologyMap]
          */
         fun of(ontologies: Map<IRI, Ontology>): OntologyMap {
             val ids: MutableMap<IRI, OWLOntologyID> = LinkedHashMap()
-            val graphs: MutableMap<IRI, Graph> = HashMap()
-            val formats: MutableMap<IRI, OntFormat> = HashMap()
+            val graphs: MutableMap<IRI, Graph> = LinkedHashMap()
+            val formats: MutableMap<IRI, OntFormat> = LinkedHashMap()
             ontologies.forEach {
                 ids[it.key] = it.value.ontologyID
                 graphs[it.key] = it.value.asGraphModel().baseGraph

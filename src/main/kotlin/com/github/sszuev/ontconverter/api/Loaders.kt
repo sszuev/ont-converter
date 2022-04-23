@@ -13,7 +13,7 @@ import java.nio.file.Path
 import kotlin.streams.asSequence
 
 /**
- * Loads the specified [file] containing ontology into the specified [manager].
+ * Loads the specified [file] containing ontology-document into the specified [manager].
  *
  * @param [file][Path]
  * @param [format][OntFormat] or `null`
@@ -36,6 +36,10 @@ fun loadFile(
  * Loads the specified directory into an [OntologyMap] or several [OntologyMap]s.
  * The catalog may contain duplicate ontologies (ontologies with the same id),
  * in which case multiple mappings will be created.
+ *
+ * Each [OntologyMap]-container contains a collection of graphs in order from independent to dependent.
+ * For example, if an ontology `a` imports an ontology `b` (i.e. graph `a` has triple `<a> owl:import <b>`),
+ * then sequence of ontologies is `b`, `a`.
  *
  * @param [dir][Path]
  * @param [format][OntFormat] or `null`

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
+import java.nio.file.Paths
 import kotlin.test.assertFalse
 import kotlin.test.assertNotSame
 import kotlin.test.assertTrue
@@ -34,7 +35,15 @@ class LoaderTest {
     }
 
     @Test
-    fun `test load directory`() {
+    fun `test load single ontology success`() {
+        val sourceFile =
+            Paths.get(LoaderTest::class.java.getResource("/ontologies/pizza.ttl")?.toURI() ?: Assertions.fail())
+        val map = loadFile(sourceFile, OntFormat.TURTLE, ignoreExceptions = false)
+        Assertions.assertEquals(1, map.ids.size)
+    }
+
+    @Test
+    fun `test load directory - check components are valid`() {
         val dir = Path.of(LoaderTest::class.java.getResource("/simple-tree")!!.toURI())
         val parent = dir.fileName.toString()
         val mappings = loadDirectory(dir, OntFormat.TURTLE, false, ::createSoftManager)
@@ -70,6 +79,16 @@ class LoaderTest {
         // K
         Assertions.assertEquals(1, mappings[6].ids.size)
         Assertions.assertTrue(mappings[6].ids.keys.first().iriString.endsWith("$parent/K.ttl"))
+    }
+
+    @Test
+    fun `test load directory - check graphs are independent`() {
+        val dir = Path.of(LoaderTest::class.java.getResource("/simple-tree")!!.toURI())
+        val mappings = loadDirectory(dir, OntFormat.TURTLE, false, ::createSoftManager)
+        mappings.forEach {
+            logger.debug("$it")
+        }
+        Assertions.assertEquals(7, mappings.size)
 
         // A
         val a1 = mappings[1].graphs[mappings[1].ids.keys.first()]!!
