@@ -1,4 +1,4 @@
-package com.github.sszuev.ontconverter.utils
+package com.github.sszuev.ontconverter.api
 
 import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntManagers
@@ -7,6 +7,10 @@ import com.github.owlcs.ontapi.OntologyManager
 import com.github.owlcs.ontapi.config.OntConfig
 import com.github.owlcs.ontapi.jena.impl.conf.OntModelConfig
 import com.github.owlcs.ontapi.jena.impl.conf.OntPersonality
+import com.github.sszuev.ontconverter.api.utils.byImportsCount
+import com.github.sszuev.ontconverter.api.utils.copyOWLContent
+import com.github.sszuev.ontconverter.api.utils.insertOntology
+import com.github.sszuev.ontconverter.api.utils.ontologyName
 import org.semanticweb.owlapi.model.MissingImportHandlingStrategy
 import org.semanticweb.owlapi.model.parameters.OntologyCopy
 import org.slf4j.Logger

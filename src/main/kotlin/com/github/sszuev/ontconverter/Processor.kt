@@ -2,8 +2,8 @@ package com.github.sszuev.ontconverter
 
 import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntologyManager
-import com.github.sszuev.ontconverter.ontapi.OntologyMap
-import com.github.sszuev.ontconverter.utils.*
+import com.github.sszuev.ontconverter.api.*
+import com.github.sszuev.ontconverter.api.utils.loadOntology
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking

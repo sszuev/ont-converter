@@ -1,4 +1,4 @@
-package com.github.sszuev.ontconverter.utils
+package com.github.sszuev.ontconverter.api.utils
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test

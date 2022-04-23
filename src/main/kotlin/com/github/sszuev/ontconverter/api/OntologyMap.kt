@@ -1,11 +1,11 @@
-package com.github.sszuev.ontconverter.ontapi
+package com.github.sszuev.ontconverter.api
 
 import com.github.owlcs.ontapi.OntFormat
 import com.github.owlcs.ontapi.OntGraphDocumentSource
 import com.github.owlcs.ontapi.Ontology
-import com.github.sszuev.ontconverter.utils.byImportsDeclarationCount
-import com.github.sszuev.ontconverter.utils.createSource
-import com.github.sszuev.ontconverter.utils.ontologyName
+import com.github.sszuev.ontconverter.api.utils.byImportsDeclarationCount
+import com.github.sszuev.ontconverter.api.utils.createSource
+import com.github.sszuev.ontconverter.api.utils.ontologyName
 import org.apache.jena.graph.Graph
 import org.semanticweb.owlapi.io.OWLOntologyDocumentSource
 import org.semanticweb.owlapi.model.*

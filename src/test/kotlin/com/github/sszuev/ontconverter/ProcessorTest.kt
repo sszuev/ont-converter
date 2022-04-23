@@ -4,7 +4,7 @@ import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntFormat
 import com.github.owlcs.ontapi.OntManagers
 import com.github.owlcs.ontapi.jena.vocabulary.RDF
-import com.github.sszuev.ontconverter.ontapi.OntologyMap
+import com.github.sszuev.ontconverter.api.OntologyMap
 import org.apache.jena.rdf.model.ResourceFactory
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assumptions

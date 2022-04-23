@@ -1,4 +1,4 @@
-package com.github.sszuev.ontconverter.utils
+package com.github.sszuev.ontconverter.api.utils
 
 import org.semanticweb.owlapi.model.IRI
 import org.slf4j.Logger

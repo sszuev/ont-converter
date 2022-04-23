@@ -1,4 +1,4 @@
-package com.github.sszuev.ontconverter.utils
+package com.github.sszuev.ontconverter.api
 
 import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntFormat
@@ -14,9 +14,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotSame
 import kotlin.test.assertTrue
 
-private val logger: Logger = LoggerFactory.getLogger(LoaderUtilsTest::class.java)
+private val logger: Logger = LoggerFactory.getLogger(LoaderTest::class.java)
 
-class LoaderUtilsTest {
+class LoaderTest {
 
     @Test
     fun `test load single ontology fail`() {
@@ -35,7 +35,7 @@ class LoaderUtilsTest {
 
     @Test
     fun `test load directory`() {
-        val dir = Path.of(LoaderUtilsTest::class.java.getResource("/simple-tree")!!.toURI())
+        val dir = Path.of(LoaderTest::class.java.getResource("/simple-tree")!!.toURI())
         val parent = dir.fileName.toString()
         val mappings = loadDirectory(dir, OntFormat.TURTLE, false, ::createSoftManager)
         mappings.forEach {

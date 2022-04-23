@@ -1,4 +1,4 @@
-package com.github.sszuev.ontconverter.utils
+package com.github.sszuev.ontconverter.api.utils
 
 import com.github.owlcs.ontapi.OntFormat
 import com.github.owlcs.ontapi.OntGraphDocumentSource

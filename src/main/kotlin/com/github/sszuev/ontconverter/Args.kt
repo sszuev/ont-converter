@@ -3,8 +3,8 @@ package com.github.sszuev.ontconverter
 import com.github.owlcs.ontapi.OntFormat
 import com.github.owlcs.ontapi.jena.impl.conf.OntModelConfig
 import com.github.owlcs.ontapi.jena.impl.conf.OntPersonality
-import com.github.sszuev.ontconverter.utils.supportedReadFormats
-import com.github.sszuev.ontconverter.utils.supportedWriteFormats
+import com.github.sszuev.ontconverter.api.utils.supportedReadFormats
+import com.github.sszuev.ontconverter.api.utils.supportedWriteFormats
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
 import kotlinx.cli.default

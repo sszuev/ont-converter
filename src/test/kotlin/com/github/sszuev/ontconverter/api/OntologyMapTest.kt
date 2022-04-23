@@ -1,7 +1,6 @@
-package com.github.sszuev.ontconverter.ontapi
+package com.github.sszuev.ontconverter.api
 
 import com.github.owlcs.ontapi.OntGraphDocumentSource
-import com.github.sszuev.ontconverter.utils.createDefaultManager
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.semanticweb.owlapi.model.IRI

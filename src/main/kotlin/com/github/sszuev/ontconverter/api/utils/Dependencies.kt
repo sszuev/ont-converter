@@ -1,4 +1,4 @@
-package com.github.sszuev.ontconverter.utils
+package com.github.sszuev.ontconverter.api.utils
 
 /**
  * Finds independent components using depth-first-search.

@@ -1,21 +1,15 @@
-package com.github.sszuev.ontconverter.utils
+package com.github.sszuev.ontconverter.api
 
 import com.github.owlcs.ontapi.OntApiException
 import com.github.owlcs.ontapi.OntFormat
 import com.github.owlcs.ontapi.Ontology
 import com.github.owlcs.ontapi.OntologyManager
-import com.github.sszuev.ontconverter.ontapi.OntologyMap
-import org.semanticweb.owlapi.io.OWLOntologyDocumentSource
+import com.github.sszuev.ontconverter.api.utils.*
 import org.semanticweb.owlapi.model.IRI
-import org.semanticweb.owlapi.model.OWLOntologyCreationException
 import org.semanticweb.owlapi.model.OWLOntologyID
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.nio.file.Path
 import kotlin.streams.asSequence
-
-private val logger: Logger = LoggerFactory.getLogger("LoadUtils.kt")
 
 /**
  * Loads the specified [file] containing ontology into the specified [manager].
@@ -28,7 +22,7 @@ private val logger: Logger = LoggerFactory.getLogger("LoadUtils.kt")
  * @return [OntologyMap]
  */
 @Throws(OntApiException::class)
-internal fun loadFile(
+fun loadFile(
     file: Path,
     format: OntFormat?,
     ignoreExceptions: Boolean,
@@ -50,7 +44,7 @@ internal fun loadFile(
  * @return [List] of [OntologyMap]s
  */
 @Throws(IOException::class, OntApiException::class)
-internal fun loadDirectory(
+fun loadDirectory(
     dir: Path,
     format: OntFormat?,
     continueIfError: Boolean,
@@ -73,7 +67,7 @@ internal fun loadDirectory(
  * @return [OntologyMap] (possibly empty in case of error)
  */
 @Throws(OntApiException::class)
-internal fun loadOntologyMapping(
+fun loadOntologyMapping(
     documentIRI: IRI,
     format: OntFormat?,
     manager: OntologyManager,
@@ -92,7 +86,7 @@ internal fun loadOntologyMapping(
  * @param [ontologyLoader] method to load [Ontology] from [IRI] to [OntologyManager]
  * @return a [List] of [Ontology]s
  */
-internal fun loadOntologyMappings(
+fun loadOntologyMappings(
     sourceProvider: () -> Sequence<IRI>,
     managerFactory: () -> OntologyManager,
     ontologyLoader: (IRI, OntologyManager) -> Ontology?,
@@ -144,6 +138,7 @@ private fun toDependencyMap(ontologies: Map<IRI, Ontology>): Map<IRI, Set<IRI>> 
 
 /**
  * Fins all imports for [thisOntology] from [allOntologies] collection.
+ *
  * @param [thisOntology][Ontology]
  * @param [allOntologies] a [Map] with ([document][IRI] - [Ontology]) pairs
  * @return a [Set] of [Ontology]
@@ -160,6 +155,7 @@ private fun findImportDocumentSources(thisOntology: Ontology, allOntologies: Map
 /**
  * Answers `true` if two ontologies (represented by [thisImportDeclaration] and [otherOntologyID])
  * can be considered as connected by imports.
+ *
  * @param [thisImportDeclaration][IRI]
  * @param [otherOntologyID][allOntologies]
  * @param [allOntologies] a [Collection] of [Ontology]s to perform final check
@@ -193,26 +189,3 @@ private fun connectedByDirectImports(
         .isEmpty()
 }
 
-/**
- * Performs ontology loading.
- * @param [source][OWLOntologyDocumentSource]
- * @param [manager][OntologyManager]
- * @param [ignoreExceptions][Boolean]
- * @return [Ontology] or `null`
- */
-internal fun loadOntology(
-    source: OWLOntologyDocumentSource,
-    manager: OntologyManager,
-    ignoreExceptions: Boolean
-): Ontology? {
-    return try {
-        manager.loadOntologyFromOntologyDocument(source)
-    } catch (ex: OWLOntologyCreationException) {
-        val iri: IRI = getSourceIRI(source)
-        if (ignoreExceptions) {
-            logger.error("Failed to load ontology document $iri")
-            return null
-        }
-        throw OntApiException("Failed to load ontology document $iri", ex)
-    }
-}
