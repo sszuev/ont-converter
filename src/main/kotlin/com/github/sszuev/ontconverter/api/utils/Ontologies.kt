@@ -81,7 +81,7 @@ fun loadOntology(
         manager.loadOntologyFromOntologyDocument(source)
     } catch (ex: OWLOntologyCreationException) {
         if (ignoreExceptions) {
-            logger.error("Failed to load ontology-document from $name: ${exceptionMessage(ex)}")
+            logger.error("Failed to load ontology-document from $name; ${exceptionMessage(ex)}")
             return null
         }
         throw OntApiException("Failed to load ontology-document from $name", ex)

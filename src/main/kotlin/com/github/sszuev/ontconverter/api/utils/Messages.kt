@@ -33,7 +33,10 @@ fun sourceName(source: OWLOntologyDocumentSource): String {
  * @return [String]
  */
 fun exceptionMessage(ex: Throwable): String {
-    val msg = ex.message?.split("\n")?.get(0)?.take(100)
+    var msg = ex.message?.split("\n")?.get(0)?.take(97)
+    if (msg?.length == 97) {
+        msg += "..."
+    }
     val clazz = ex.javaClass.name.split(".").last()
-    return "$clazz -- $msg"
+    return "$clazz: \"$msg\""
 }

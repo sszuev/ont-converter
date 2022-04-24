@@ -123,7 +123,7 @@ class Processor(private val args: Args) {
                 manager.saveOntology(ont, targetFormat, IRI.create(file.toFile()))
             } catch (ex: Exception) {
                 if (args.force) {
-                    logger.error("Can't save $name to ${file}: ${exceptionMessage(ex)}")
+                    logger.error("Can't save $name to ${file}; ${exceptionMessage(ex)}")
                 } else {
                     throw OntApiException("Can't save $name to $file", ex)
                 }
