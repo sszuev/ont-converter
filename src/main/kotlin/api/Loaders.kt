@@ -147,7 +147,7 @@ private fun toDependencyMap(ontologies: Map<IRI, Ontology>): Map<IRI, Set<IRI>> 
  * @return a [Set] of [Ontology]
  */
 private fun findImportDocumentSources(thisOntology: Ontology, allOntologies: Map<IRI, Ontology>): Set<IRI> {
-    val imports = thisOntology.importsDeclarations().asSequence().map { x -> x.iri }.toSet()
+    val imports = thisOntology.importsDeclarations().asSequence().map { it.iri }.toSet()
     return imports.mapNotNull { import ->
         allOntologies.filterValues {
             connectedByDirectImports(import, it.ontologyID, allOntologies = { allOntologies.values })
@@ -181,10 +181,7 @@ private fun connectedByDirectImports(
     // the primary ontologyIRI corresponds to the import,
     // if such an ontology is the only one in the collection, then it can be considered imported
     return allOntologies.invoke()
-        //.asSequence()
-        .map {
-            it.ontologyID
-        }
+        .map { it.ontologyID }
         .filter {
             it.matchOntology(thisImportDeclaration)
         }

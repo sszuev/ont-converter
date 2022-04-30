@@ -21,9 +21,9 @@ fun <X> findIndependentComponents(graph: Map<X, Collection<X>>): List<Set<X>> {
             break
         }
         val vertexes: MutableSet<X> = LinkedHashSet()
-        dfs(root, graph, HashSet()) { x: X ->
-            vertexes.add(x)
-            map.remove(x)
+        dfs(root, graph, HashSet()) {
+            vertexes.add(it)
+            map.remove(it)
         }
         res.add(vertexes)
         root = firstRootOrNull(map)
@@ -43,13 +43,13 @@ private fun <X> dfs(
     vertex: X,
     graph: Map<X, Collection<X>>,
     seen: MutableSet<X>,
-    block: (x: X) -> Unit
+    block: (X) -> Unit
 ) {
     if (!seen.add(vertex)) {
         return
     }
     val adjacent = graph[vertex]
-    adjacent?.forEach { u: X -> dfs(u, graph, seen, block) }
+    adjacent?.forEach { dfs(it, graph, seen, block) }
     block.invoke(vertex)
 }
 
@@ -59,7 +59,7 @@ private fun <X> dfs(
  */
 private fun <X> firstRootOrNull(graph: Map<X, Collection<X>>): X? {
     for (key in graph.keys) {
-        if (graph.values.none { v: Collection<X> -> v.contains(key) }) {
+        if (graph.values.none { it.contains(key) }) {
             return key
         }
     }
@@ -71,9 +71,9 @@ private fun <X> firstRootOrNull(graph: Map<X, Collection<X>>): X? {
  */
 private fun <X> toFlatSet(graph: Map<X, Collection<X>>): Set<X> {
     val res: MutableSet<X> = LinkedHashSet()
-    graph.forEach { (k: X, values: Collection<X>) ->
+    graph.forEach { (k, v) ->
         res.add(k)
-        res.addAll(values)
+        res.addAll(v)
     }
     return res
 }
