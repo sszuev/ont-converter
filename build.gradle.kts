@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.github.sszuev"
-version = "2.0.1"
+version = "2.0.2-SNAPSHOT"
 description = "A simple command-line utility to convert any RDF graph to OWL2-DL ontology"
 
 repositories {
