@@ -6,7 +6,8 @@ This is a kind of [ONT-API](https://github.com/owlcs/ont-api) extension.
 Can work both with single ontology file source and with directory containing dependent or independent ontology document sources.
 The utility automatically transforms the source RDF Graph to the OWL2 DL syntax according to the internal rules and command-line options.
 For example, if there is no `owl:Ontology` section inside rdf-graph (which is required by OWL), an anonymous ontology header will be generated.
-The tool is available in the form of code and prebuilt jar (see [/releases](https://github.com/sszuev/ont-converter/releases)).
+The tool is available in the form of code and prebuilt jar (see [/releases](https://github.com/sszuev/ont-converter/releases)), 
+and as a library at [jitpack.io](https://jitpack.io).
 
 ### Usage: `java -jar ont-converter.jar [-f] [-h] -i <path> [-if <format>] -o <path> -of <format> [-p <0|1|2>] [-r] [-v] [-w]`
 
@@ -37,6 +38,11 @@ where
 Some facilities from the tool internals can be used as a library to simplify bulk loading. 
 This can be helpful to properly handle all `owl:imports` dependencies. See examples:
 ```java
+import com.github.owlcs.ontapi.OntFormat;
+import com.github.sszuev.ontconverter.api.LoadersKt;
+import com.github.sszuev.ontconverter.api.ManagersKt;
+import com.github.sszuev.ontconverter.api.OntologyMap;
+
 List<OntologyMap> maps = LoadersKt.loadDirectory(Path.of("/path-to-dir-with-ontologies"), null, false, ManagersKt::createSoftManager);
 maps.forEach(map -> map.getIds().forEach((iri, id) -> System.out.println("document-iri = " + iri + " => id=" + id)));
 maps.forEach(map -> map.getGraphs().forEach((iri, g) -> System.out.println("document-iri = " + iri + " => triples=" + g.size())));
