@@ -1,8 +1,6 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-    kotlin("jvm") version "1.6.10"
-    id("org.jetbrains.dokka") version "1.6.20"
+    kotlin("jvm") version "1.8.10"
+    id("org.jetbrains.dokka") version "1.8.10"
     id("org.gradle.maven-publish")
     id("org.gradle.application")
 }
@@ -16,18 +14,19 @@ repositories {
 }
 
 dependencies {
-    val kotlinCliVersion = "0.3.4"
-    val kotlinCoroutinesVersion = "1.6.1"
     val ontapiVersion = "3.0.0"
     val owlapiVersion = "5.1.20"
-    val slf4jVersion = "1.7.36"
+
+    val kotlinCliVersion = "0.3.5"
+    val kotlinCoroutinesVersion = "1.6.4"
+    val slf4jVersion = "2.0.6"
 
     implementation("org.jetbrains.kotlinx:kotlinx-cli:$kotlinCliVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion")
     implementation("com.github.owlcs:ontapi:$ontapiVersion")
     implementation("net.sourceforge.owlapi:owlapi-parsers:$owlapiVersion")
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
-    implementation("org.slf4j:slf4j-log4j12:$slf4jVersion")
+    implementation("org.slf4j:slf4j-reload4j:$slf4jVersion")
 
     testImplementation(kotlin("test"))
 }
@@ -36,8 +35,8 @@ tasks.test {
     useJUnitPlatform()
 }
 
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "11"
+kotlin {
+    jvmToolchain(11)
 }
 
 application {
